@@ -45,9 +45,6 @@ static void handle_client(int client_sock)
         "</html>\r\n";
     
     send(client_sock, http_response, strlen(http_response), 0);
-
-    // 关闭客户端套接字
-    close(client_sock);
 }
 
 
@@ -114,9 +111,6 @@ int main()
 EXITED:
     if (srv_sock) {
         close(srv_sock);
-    }
-    if (cli_sock) {
-        close(cli_sock);
     }
 
     return ret;
