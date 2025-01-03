@@ -8,6 +8,7 @@ set(TARGET litewebserver)
 
 set(SRC_FILE 
     src/main.cpp
+    src/litewebserver.cpp
 )
 
 add_executable(${TARGET} ${SRC_FILE})
