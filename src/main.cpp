@@ -109,6 +109,7 @@ int main()
 
 
 EXITED:
+    printf("Server stop...\n");
     if (srv_sock) {
         close(srv_sock);
     }
