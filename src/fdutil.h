@@ -1,0 +1,66 @@
+#ifndef SRC_FD_UTIL_
+#define SRC_FD_UTIL_
+
+#include <stdint.h>
+
+#include <fcntl.h>
+#include <sys/epoll.h>
+
+
+class FdUtil
+{
+public:
+    static int set_nonblocking(int fd);
+    static int epoll_add_fd(int epollfd, int fd, uint32_t events);
+    /**
+     * 添加fd到epollfd，默认设置为EPOLLONESHOT
+     * @param epollfd epoll实例
+     * @param fd 需要添加的fd
+     * @param events 事件类型
+     * @return epoll_ctl的返回值，详细错误和epoll_ctl一致通过errno获取
+     */
+    static int epoll_add_fd_oneshot(int epollfd, int fd, uint32_t events);
+    /**
+     * 修改fd在epollfd中的事件类型，默认设置为EPOLLONESHOT
+     * 通过EPOLL_CTL_ADD命令添加的带有EPOLLONESHOT标志的fd，在触发一次后不再触发，
+     * 需要EPOLL_CTL_DEL后重新EPOLL_CTL_ADD
+     * 或者通过EPOLL_CTL_MOD修改
+     * @param epollfd epoll实例
+     * @param fd 需要添加的fd
+     * @param events 事件类型
+     * @return epoll_ctl的返回值，详细错误和epoll_ctl一致通过errno获取
+     */
+    static int epoll_mod_fd_oneshot(int epollfd, int fd, uint32_t events);
+};
+
+inline int FdUtil::set_nonblocking(int fd)
+{
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1) { return -1; }
+    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
+inline int FdUtil::epoll_add_fd(int epollfd, int fd, uint32_t events)
+{
+    struct epoll_event sock_event;
+    sock_event.data.fd = fd;
+    sock_event.events = events;
+    return epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &sock_event);
+} 
+
+inline int FdUtil::epoll_add_fd_oneshot(int epollfd, int fd, uint32_t events) {
+    struct epoll_event sock_event;
+    sock_event.data.fd = fd;
+    sock_event.events = events | EPOLLONESHOT;
+    return epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &sock_event);
+}
+
+inline int FdUtil::epoll_mod_fd_oneshot(int epollfd, int fd, uint32_t events)
+{
+    struct epoll_event sock_event;
+    sock_event.data.fd = fd;
+    sock_event.events = events | EPOLLONESHOT;
+    return epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &sock_event);
+}
+
+#endif // SRC_FD_UTIL_
