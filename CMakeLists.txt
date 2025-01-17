@@ -6,9 +6,14 @@ cmake_minimum_required(VERSION 3.10)
 project(LiteWebServer VERSION 1.0)
 set(TARGET litewebserver)
 
+include_directories(
+    src/
+)
+
 set(SRC_FILE 
     src/main.cpp
     src/litewebserver.cpp
+    src/userconn.cpp
 )
 
 add_executable(${TARGET} ${SRC_FILE})

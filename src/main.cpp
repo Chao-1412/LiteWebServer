@@ -8,6 +8,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "litewebserver.h"
+
 
 static void print_errno_info(const char *const extra_msg)
 {
@@ -50,69 +52,75 @@ static void handle_client(int client_sock)
 
 int main()
 {
-    int ret = 0;
-    int srv_sock = -1;
-    int sockopt_reuse = 1;
+//     int ret = 0;
+//     int srv_sock = -1;
+//     int sockopt_reuse = 1;
 
-    uint16_t listen_port = 8080;
-    struct sockaddr_in host_addr;
-    socklen_t host_addr_size = sizeof(host_addr);
-    memset(&host_addr, 0, host_addr_size);
-    host_addr.sin_family = AF_INET;
-    host_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    host_addr.sin_port = htons(listen_port);
+//     uint16_t listen_port = 8080;
+//     struct sockaddr_in host_addr;
+//     socklen_t host_addr_size = sizeof(host_addr);
+//     memset(&host_addr, 0, host_addr_size);
+//     host_addr.sin_family = AF_INET;
+//     host_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+//     host_addr.sin_port = htons(listen_port);
 
-    int con_queue_n = 5;
+//     int con_queue_n = 5;
 
-    int cli_sock;
-    struct sockaddr_in cli_addr;
-    socklen_t cli_addr_size = 0;
+//     int cli_sock;
+//     struct sockaddr_in cli_addr;
+//     socklen_t cli_addr_size = 0;
 
-    srv_sock = socket(PF_INET, SOCK_STREAM, 0);
-    if (srv_sock <= 0) {
-        print_errno_info("create socket failed");
-        ret = errno;
-        goto EXITED;
-    }
-    setsockopt(srv_sock, SOL_SOCKET, SO_REUSEADDR, &sockopt_reuse, sizeof(sockopt_reuse));
+//     srv_sock = socket(PF_INET, SOCK_STREAM, 0);
+//     if (srv_sock <= 0) {
+//         print_errno_info("create socket failed");
+//         ret = errno;
+//         goto EXITED;
+//     }
+//     setsockopt(srv_sock, SOL_SOCKET, SO_REUSEADDR, &sockopt_reuse, sizeof(sockopt_reuse));
 
-    ret = bind(srv_sock, (struct sockaddr*)&host_addr, host_addr_size);
-    if (ret < 0) {
-        print_errno_info("bind failed");
-        ret = errno;
-        goto EXITED;
-    }
-    printf("Server bound to port %d\n", listen_port);
+//     ret = bind(srv_sock, (struct sockaddr*)&host_addr, host_addr_size);
+//     if (ret < 0) {
+//         print_errno_info("bind failed");
+//         ret = errno;
+//         goto EXITED;
+//     }
+//     printf("Server bound to port %d\n", listen_port);
 
-    ret = listen(srv_sock, con_queue_n);
-     if (ret < 0) {
-        print_errno_info("listen failed");
-        ret = errno;
-        goto EXITED;
-    }
-    printf("Server is listening...\n");
+//     ret = listen(srv_sock, con_queue_n);
+//      if (ret < 0) {
+//         print_errno_info("listen failed");
+//         ret = errno;
+//         goto EXITED;
+//     }
+//     printf("Server is listening...\n");
 
-    while (1) {
-        cli_sock = accept(srv_sock, (struct sockaddr *)&cli_addr, &cli_addr_size);
-        if (cli_sock < 0) {
-            print_errno_info("accept client failed");
-            continue;
-        }
+//     while (1) {
+//         cli_sock = accept(srv_sock, (struct sockaddr *)&cli_addr, &cli_addr_size);
+//         if (cli_sock < 0) {
+//             print_errno_info("accept client failed");
+//             continue;
+//         }
 
-        printf("Recive client connect, cli_sock: %d, ip: %s\n",
-               cli_sock, inet_ntoa(cli_addr.sin_addr));
+//         printf("Recive client connect, cli_sock: %d, ip: %s\n",
+//                cli_sock, inet_ntoa(cli_addr.sin_addr));
 
-        // 处理客户端请求
-        handle_client(cli_sock);
-        close(cli_sock);
-    }
+//         // 处理客户端请求
+//         handle_client(cli_sock);
+//         close(cli_sock);
+//     }
 
 
-EXITED:
-    printf("Server stop...\n");
-    if (srv_sock) {
-        close(srv_sock);
-    }
+// EXITED:
+//     printf("Server stop...\n");
+//     if (srv_sock) {
+//         close(srv_sock);
+//     }
 
-    return ret;
+//     return ret;
+
+    ServerConf conf(8080);
+    LiteWebServer server(conf);
+    server.start_loop();
+
+    return 0;
 }
