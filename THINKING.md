@@ -11,3 +11,5 @@
 5. ngnix 和 apache 与自己写的webserver有什么不同点和共同点？libevent 和 muduo又和ngnix，apache有什么不同点和共同点呢？
 
 6. 如何调优？CPU，内存，内核读写队列，代码的读写队列？
+
+7. 如何实现类似flask的框架？如何将C++web程序挂到apache？
