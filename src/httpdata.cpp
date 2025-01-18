@@ -149,8 +149,9 @@ uint32_t HttpRequest::parse_req_line(const std::string &data, uint32_t start_idx
 bool HttpRequest::parse_uri(const std::string &uri)
 {
     bool get_token = false;
+    std::string delim = "?";
 
-    get_token = StringUtil::str_get_first_token(path_, uri, "?", 0);
+    get_token = StringUtil::str_get_first_token(path_, uri, delim, 0);
     if (!get_token) {
         if (uri.empty()) {
             return false;
@@ -163,35 +164,40 @@ bool HttpRequest::parse_uri(const std::string &uri)
         return false;
     }
 
-    std::string raw_param = uri.substr(path_.size() + 1);
+    std::string raw_param = uri.substr(path_.size() + delim.size());
     if (raw_param.empty()) {
         // 明明带有参数的"?"，但是没有参数
         return false;
     }
 
+    delim = "&";
     std::string key_val;
     std::size_t start_pos = 0;
     while (1) {
-        get_token = StringUtil::str_get_first_token(key_val, raw_param, "&", start_pos);
+        get_token = StringUtil::str_get_first_token(key_val, raw_param, delim, start_pos);
         if (!get_token) {
-            // 最后一个参数
+            // 可能只有一个参数，或最后一个参数
+            key_val = raw_param.substr(start_pos);
         }
-            
+        
+        get_token = StringUtil::str_get_key_val(param_, key_val, "=");
+        if (!get_token) {
+            return false;
+        }
+
+        start_pos += key_val.size() + delim.size();
+        if (start_pos >= raw_param.size()) {
+            break;
+        }
     }
 
-    return false;
+    return true;
 }
 
 bool HttpRequest::path_is_vaild(const std::string &path)
 {
     //TODO 可能需要更详细的检查路径
     return !path.empty();
-}
-
-bool HttpRequest::parse_param(const std::string &param)
-{
-
-    return false;
 }
 
 uint32_t HttpRequest::parse_req_header(const std::string &data, uint32_t start_idx)
@@ -219,5 +225,10 @@ uint32_t HttpRequest::parse_req_header(const std::string &data, uint32_t start_i
     //     parse_req_header(line);
     // }
 
+    return 0;
+}
+
+uint32_t HttpRequest::parse_req_body(const std::string &data, uint32_t start_idx)
+{
     return 0;
 }

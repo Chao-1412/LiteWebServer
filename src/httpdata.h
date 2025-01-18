@@ -6,26 +6,11 @@
 
 #include <stdint.h>
 
+#include "stringutil.h"
+
 
 template <typename EnumType> constexpr const char* http_enum_to_str(EnumType e);
 template <typename EnumType> constexpr EnumType http_str_to_enum(const char* str);
-
-constexpr bool ch_str_is_equal(const char *str1, const char *str2)
-{
-    while (*str1 != '\0' && *str2 != '\0') {
-        if (*str1 != *str2) {
-            return false;
-        }
-        ++str1;
-        ++str2;
-    }
-
-    if (*str1 == '\0' && *str2 == '\0') {
-        return true;
-    } else {
-        return false;
-    }
-}
 
 // new HttpMethod enum insert here
 #define HTTPMETHOD_ENUM \
@@ -90,7 +75,7 @@ constexpr const char* http_enum_to_str<HttpMethod>(HttpMethod e)
 template<>
 constexpr HttpMethod http_str_to_enum<HttpMethod>(const char* str)
 {
-    #define X(NAME) if (ch_str_is_equal(str, #NAME)) return HttpMethod::NAME;
+    #define X(NAME) if (StringUtil::ch_str_is_equal(str, #NAME)) return HttpMethod::NAME;
     HTTPMETHOD_ENUM
     #undef X
     return HttpMethod::UNKNOWN;
@@ -110,7 +95,7 @@ constexpr const char* http_enum_to_str<HttpCode>(HttpCode e)
 template<>
 constexpr HttpCode http_str_to_enum<HttpCode>(const char* str)
 {
-    #define X(NAME, CODE, DESC) if (ch_str_is_equal(str, #NAME)) return HttpCode::NAME;
+    #define X(NAME, CODE, DESC) if (StringUtil::ch_str_is_equal(str, #NAME)) return HttpCode::NAME;
     HTTPCODE_ENUM
     #undef X
     return HttpCode::UNKNOWN;
@@ -130,7 +115,7 @@ constexpr const char* http_enum_to_str<HttpVersion>(HttpVersion e)
 template<>
 constexpr HttpVersion http_str_to_enum<HttpVersion>(const char* str)
 {
-    #define X(NAME, DESC) if (ch_str_is_equal(str, #NAME)) return HttpVersion::NAME;
+    #define X(NAME, DESC) if (StringUtil::ch_str_is_equal(str, #NAME)) return HttpVersion::NAME;
     HTTPVERSION_ENUM
     #undef X
     return HttpVersion::UNKNOWN;
@@ -169,10 +154,10 @@ public:
 
 private:
     void set_bad_req();
+    //TODO 需要优化
     uint32_t parse_req_line(const std::string &data, uint32_t start_idx);
     bool parse_uri(const std::string &uri);
     bool path_is_vaild(const std::string &path);
-    bool parse_param(const std::string &param);
     uint32_t parse_req_header(const std::string &data, uint32_t start_idx);
     uint32_t parse_req_body(const std::string &data, uint32_t start_idx);
 
