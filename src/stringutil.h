@@ -5,6 +5,9 @@
 #include <string>
 #include <unordered_map>
 
+#include <errno.h>
+
+
 class StringUtil
 {
 public:
@@ -51,6 +54,16 @@ public:
     // 不同的是如果使用外部定义，定义时也需要加上constexpr修饰符
     static constexpr
     bool ch_str_is_equal(const char *str1, const char *str2);
+
+    /**
+     * @brief 字符串转整形
+     * @param ret 保存转换结果
+     * @param str 待转换的字符串
+     * @param fn 转换函数，支持: strtol、strtoul、strtoll、strtoull
+     * @return 是否转换成功
+     */
+    template<typename T, typename F>
+    static bool str_to_inum(T &ret, const std::string &str, F fn);
 };
 
 std::vector<std::string> StringUtil::str_split(
@@ -121,5 +134,21 @@ constexpr bool StringUtil::ch_str_is_equal(const char *str1, const char *str2)
     } else {
         return false;
     }
+}
+
+template<typename T, typename F>
+bool StringUtil::str_to_inum(T &ret, const std::string &str, F fn)
+{
+    char *end_ptr = nullptr;
+
+    ret = fn(str.c_str(), &end_ptr, 10);
+    if (*end_ptr != '\0') {
+        return false;
+    }
+    if (errno == ERANGE) {
+        return false;
+    }
+
+    return true;
 }
 #endif //STRING_UTIL_H_

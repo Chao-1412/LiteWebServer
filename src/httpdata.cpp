@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "stringutil.h"
 
@@ -202,33 +203,78 @@ bool HttpRequest::path_is_vaild(const std::string &path)
 
 uint32_t HttpRequest::parse_req_header(const std::string &data, uint32_t start_idx)
 {
-    // std::string line;
+    uint32_t parsed_bytes = 0;
+    std::string line;
+    bool get_token = false;
 
-    // while (1) {
-    //     // 按行分割
-    //     std::size_t pos = data.find("\r\n", start_idx);
-    //     if (pos == std::string::npos) {
-    //         state_ = ParseState::PARSE_PROCESSING;
-    //         return parsed_bytes;
-    //     }
+    while(1) {
+        get_token = StringUtil::str_get_first_token(
+                        line, data, "\r\n",
+                        start_idx + parsed_bytes
+                    );
+        if (!get_token) {
+            // 可能没有"\r\n"，说明数据量不足，需要等待下次调用
+            return parsed_bytes;
+        }
 
-    //     if (pos == start_idx) {
-    //         // 空行，只能说明请求头解析完毕
-    //         // 还不能直接返回，要根据请求类型判断是否还有数据段，是否请求成功
-    //         // 比如POST请求，请求头后面还有数据段
-    //         state_ = ParseState::PARSE_SUCCESS;
-    //         break;
-    //     }
+        if (line.empty()) {
+            // 是空行, 说明请求头解析完毕
+            parsed_bytes += 2;
+            break;
+        }
+        //BUG 需要检查key-val的合法性
+        get_token = StringUtil::str_get_key_val(headers_, line, ": ");
+        if(!get_token) {
+            set_bad_req();
+            return parsed_bytes;
+        }
 
-    //     line = data.substr(start_idx, pos - start_idx);
-    //     parse_req_line(line);
-    //     parse_req_header(line);
-    // }
+        parsed_bytes += line.size() + 2;
+    }
 
-    return 0;
+    // 解析成功，状态机状态转移
+    state_ = ParseState::PARSE_BODY;
+    // plus "\r\n" size
+    return parsed_bytes;
 }
 
 uint32_t HttpRequest::parse_req_body(const std::string &data, uint32_t start_idx)
 {
-    return 0;
+    uint32_t parsed_bytes = 0;
+
+    if (method_ == HttpMethod::GET) {
+        // GET请求没有请求体
+        state_ = ParseState::PARSE_SUCCESS;
+        return 0;
+    } else if (method_ == HttpMethod::POST) {
+        const auto &header = headers_.find("Content-Length");
+        if (header == headers_.end()) {
+            //BUG 目前只支持有Content-Length的POST请求
+            set_bad_req();
+            return 0;
+        }
+        unsigned long content_len = 0;
+        //TODO 优化每一次都要转换的问题
+        bool converted = StringUtil::str_to_inum(content_len, header->second, strtoul);
+        if (!converted) {
+            set_bad_req();
+            return 0;
+        }
+        // 不会出现小等于0的情况
+        unsigned long remain_body_len = content_len - body_.size();
+        if (remain_body_len > data.size() - start_idx) {
+            remain_body_len = data.size() - start_idx;
+        }
+        body_.append(data.substr(start_idx, remain_body_len));
+        parsed_bytes += remain_body_len;
+        if (body_.size() == content_len) {
+            state_ = ParseState::PARSE_SUCCESS;
+        }
+      } else {
+        //BUG 支持其他类型的请求方法
+        set_bad_req();
+        return 0;
+    }
+
+    return parsed_bytes;
 }

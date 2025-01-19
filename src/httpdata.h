@@ -135,10 +135,12 @@ private:
 public:
     HttpRequest();
     /**
-     *TODO 可能需要优化解析性能
-     * @brief 解析HTTP请求
-     *        通过\r\n分割数据
-     *        只要解析到错误数据就返回，不管后续数据
+     *TODO 可能需要优化解析性能,
+     * @brief 解析HTTP请求, 
+     *        调用者要自己保证start_idx参数是合法的, 
+     *        只要解析到错误数据就返回，不管后续数据, 
+     *        通过调用parse_complete()判断解析是否成功, 
+     *        通过调用is_bad_req()判断是否是非法请求
      * @param data 待解析的HTTP请求数据
      * @param start_idx 解析起始位置
      * @return 返回从data中已解析出的字节数，不一定等于data.size()，因为：
