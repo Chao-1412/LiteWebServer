@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
+option(ENABLE_UNITTEST "Enable unittest" OFF)
+
 # 这个是全局设定的
 # set(CMAKE_BUILD_TYPE Debug)
 
@@ -18,3 +20,10 @@ set(SRC_FILE
 )
 
 add_executable(${TARGET} ${SRC_FILE})
+
+
+# 测试
+if(ENABLE_UNITTEST)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
