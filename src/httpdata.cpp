@@ -1,6 +1,7 @@
 #include "httpdata.h"
 
 #include <vector>
+#include <iostream>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -37,7 +38,8 @@ uint32_t HttpRequest::parse(const std::string &data, uint32_t start_idx)
     /**
      * 必须按照，LINE，HEADER，BODY的顺序解析
      */
-    if (state_ == ParseState::PARSE_SUCCESS) {
+    if (state_ == ParseState::PARSE_SUCCESS
+        || start_idx >= data.size()) {
         return 0;
     }
 
@@ -76,6 +78,54 @@ std::string HttpRequest::get_path() const
     return path_;
 }
 
+std::string HttpRequest::get_http_ver() const
+{
+    return http_ver_;
+}
+
+bool HttpRequest::get_param(std::string &val, const std::string &key) const
+{
+    auto it = param_.find(key);
+    if (it == param_.end()) {
+        return false;
+    }
+
+    val = it->second;
+    return true;
+}
+
+bool HttpRequest::get_body(std::string &body) const
+{
+    body = body_;
+    return true;
+}
+
+void HttpRequest::dump_data()
+{
+    std::cout << "====================================" << std::endl;
+    std::cout << "Current http req data:" << std::endl;
+    std::cout << "is complete: " << parse_complete() << std::endl;
+    std::cout << "is bad req: " << is_bad_req() << std::endl;
+    std::cout << "parse state: " << static_cast<int>(state_) << std::endl;
+    std::cout << "method: " << static_cast<int>(method_)
+              << " "
+              << http_enum_to_str<HttpMethod>(method_)
+              << std::endl;
+    std::cout << "path: " << path_ << std::endl;
+    std::cout << "http_ver: " << http_ver_ << std::endl;
+    std::cout << "body: " << body_ << std::endl;
+    
+    std::cout << "header:" << std::endl;
+    for (const auto &kv : headers_) {
+        std::cout << "    " << kv.first << ": " << kv.second << std::endl;
+    }
+
+    std::cout << "param:" << std::endl;
+    for (const auto &kv : param_) {
+        std::cout << "    " << kv.first << ": " << kv.second << std::endl;
+    }
+}
+
 void HttpRequest::set_bad_req()
 {
     is_bad_req_ = true;
@@ -88,9 +138,9 @@ uint32_t HttpRequest::parse_req_line(const std::string &data, uint32_t start_idx
     std::string line = "";
     std::size_t line_end = std::string::npos;
 
+    //BUG 需要防止输入"\r \n"的情况
     line_end = data.find("\r\n", start_idx);
     if (line_end == std::string::npos) {
-        set_bad_req();
         return 0;
     }
     line = data.substr(start_idx, line_end - start_idx);
@@ -110,8 +160,8 @@ uint32_t HttpRequest::parse_req_line(const std::string &data, uint32_t start_idx
     }
 
     segment = line.substr(start_pos, pos);
-    HttpMethod method = http_str_to_enum<HttpMethod>(segment.c_str());
-    if (method == HttpMethod::UNKNOWN) {
+    method_ = http_str_to_enum<HttpMethod>(segment.c_str());
+    if (method_ == HttpMethod::UNKNOWN) {
         set_bad_req();
         return 0;
     }
@@ -232,6 +282,7 @@ uint32_t HttpRequest::parse_req_header(const std::string &data, uint32_t start_i
         parsed_bytes += line.size() + 2;
     }
 
+    //BUG 需要校验Host头是否存在
     // 解析成功，状态机状态转移
     state_ = ParseState::PARSE_BODY;
     // plus "\r\n" size
@@ -247,10 +298,16 @@ uint32_t HttpRequest::parse_req_body(const std::string &data, uint32_t start_idx
         state_ = ParseState::PARSE_SUCCESS;
         return 0;
     } else if (method_ == HttpMethod::POST) {
+        //TODO 封装成独立函数
+        //BUG 目前只支持有Content-Length的POST请求
+        //     不含Content-Length的默认包体大小为0
         const auto &header = headers_.find("Content-Length");
         if (header == headers_.end()) {
-            //BUG 目前只支持有Content-Length的POST请求
-            set_bad_req();
+            state_ = ParseState::PARSE_SUCCESS;
+            return 0;
+        }
+        // 有Content-Length，但是数据量不足
+        if (start_idx >= data.size()) {
             return 0;
         }
         unsigned long content_len = 0;
@@ -270,7 +327,7 @@ uint32_t HttpRequest::parse_req_body(const std::string &data, uint32_t start_idx
         if (body_.size() == content_len) {
             state_ = ParseState::PARSE_SUCCESS;
         }
-      } else {
+    } else {
         //BUG 支持其他类型的请求方法
         set_bad_req();
         return 0;

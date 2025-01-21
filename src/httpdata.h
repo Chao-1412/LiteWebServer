@@ -85,7 +85,7 @@ template<>
 constexpr const char* http_enum_to_str<HttpCode>(HttpCode e)
 {
     switch (e) {
-        #define X(NAME, CODE, DESC) case HttpCode::NAME: return #DESC;
+        #define X(NAME, CODE, DESC) case HttpCode::NAME: return DESC;
         HTTPCODE_ENUM
         #undef X
         default: return "";
@@ -95,7 +95,7 @@ constexpr const char* http_enum_to_str<HttpCode>(HttpCode e)
 template<>
 constexpr HttpCode http_str_to_enum<HttpCode>(const char* str)
 {
-    #define X(NAME, CODE, DESC) if (StringUtil::ch_str_is_equal(str, #NAME)) return HttpCode::NAME;
+    #define X(NAME, CODE, DESC) if (StringUtil::ch_str_is_equal(str, DESC)) return HttpCode::NAME;
     HTTPCODE_ENUM
     #undef X
     return HttpCode::UNKNOWN;
@@ -105,7 +105,7 @@ template<>
 constexpr const char* http_enum_to_str<HttpVersion>(HttpVersion e)
 {
     switch (e) {
-        #define X(NAME, DESC) case HttpVersion::NAME: return #DESC;
+        #define X(NAME, DESC) case HttpVersion::NAME: return DESC;
         HTTPVERSION_ENUM
         #undef X
         default: return "";
@@ -115,7 +115,7 @@ constexpr const char* http_enum_to_str<HttpVersion>(HttpVersion e)
 template<>
 constexpr HttpVersion http_str_to_enum<HttpVersion>(const char* str)
 {
-    #define X(NAME, DESC) if (StringUtil::ch_str_is_equal(str, #NAME)) return HttpVersion::NAME;
+    #define X(NAME, DESC) if (StringUtil::ch_str_is_equal(str, DESC)) return HttpVersion::NAME;
     HTTPVERSION_ENUM
     #undef X
     return HttpVersion::UNKNOWN;
@@ -137,7 +137,7 @@ public:
     /**
      *TODO 可能需要优化解析性能,
      * @brief 解析HTTP请求, 
-     *        调用者要自己保证start_idx参数是合法的, 
+     *        调用者要自己保证start_idx参数是合法的, 否则可能造成未知的后果
      *        只要解析到错误数据就返回，不管后续数据, 
      *        通过调用parse_complete()判断解析是否成功, 
      *        通过调用is_bad_req()判断是否是非法请求
@@ -149,10 +149,34 @@ public:
      *         下次调用可以传递给start_idx参数，加速解析
      */
     uint32_t parse(const std::string &data, uint32_t start_idx = 0);
+    /**
+     * @brief 判断是否解析完毕
+     * @return true 解析完毕
+     * @return false 解析未完毕
+     */
     bool parse_complete() const;
+    /**
+     * @brief 判断是否是非法请求，
+     *        使用前需要先调用parse_complete来判断是否解析完毕
+     *        否则永远是false
+     * @return true 是非法请求
+     * @return false 不是非法请求
+     */
     bool is_bad_req() const;
     HttpMethod get_method() const;
     std::string get_path() const;
+    std::string get_http_ver() const;
+    /**
+     * @brief 获取请求参数
+     * @param val 输出参数值
+     * @param key 参数名
+     * @return true 获取成功
+     * @return false 获取失败
+     */
+    bool get_param(std::string &val, const std::string &key) const;
+    //TODO 添加解析body的方法
+    bool get_body(std::string &body) const;
+    void dump_data();
 
 private:
     void set_bad_req();
@@ -169,7 +193,7 @@ private:
     HttpMethod method_;
     std::string path_;
     std::string http_ver_;
-    //TODO 使用shared_ptr优化内存
+    //TODO 使用shared_ptr优化内存和执行效率！
     std::unordered_map<std::string, std::string> headers_;
     std::unordered_map<std::string, std::string> param_;
     std::string body_;
