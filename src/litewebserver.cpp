@@ -172,6 +172,7 @@ void LiteWebServer::deal_new_conn()
 
     conn_.emplace(cli_sock, std::make_unique<UserConn>(this, &srv_conf_, cli_sock));
 
+    FdUtil::set_nonblocking(cli_sock);
     // 通过设置EPOLLONESHOT保证，每个UserConn同一时间在线程池中只有一个任务
     // 避免了潜在的竟态问题，降低复杂性
     // 不清楚有没有不用EPOLLONESHOT的设计方案
