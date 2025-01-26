@@ -51,7 +51,7 @@ private:
     int srv_sock_;
     chaos::ThreadPool workerpool_;
     struct epoll_event *events_;
-    std::unordered_map<int, std::unique_ptr<UserConn> > conn_;
+    std::unordered_map<int, std::shared_ptr<UserConn> > conns_;
 };
 
 #endif //SRC_LITEWEBSERVER_H_

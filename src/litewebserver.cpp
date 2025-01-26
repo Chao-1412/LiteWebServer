@@ -31,6 +31,7 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     , srv_sock_(-1)
     , workerpool_(chaos::ThreadPool(srv_conf_.nthread_))
     , events_(new struct epoll_event[srv_conf_.epoll_max_events_])
+    , conns_(5000)  // 预分配大小，降低哈希开销，空间换时间
 {
     init_log();
 
@@ -170,7 +171,7 @@ void LiteWebServer::deal_new_conn()
         return;
     }
 
-    conn_.emplace(cli_sock, std::make_unique<UserConn>(this, &srv_conf_, cli_sock));
+    conns_.emplace(cli_sock, std::make_shared<UserConn>(this, &srv_conf_, cli_sock));
 
     FdUtil::set_nonblocking(cli_sock);
     // 通过设置EPOLLONESHOT保证，每个UserConn同一时间在线程池中只有一个任务
@@ -181,31 +182,33 @@ void LiteWebServer::deal_new_conn()
 
 void LiteWebServer::disconn_one(int cli_sock)
 {
-    auto one_user = conn_.find(cli_sock);
-    if (one_user == conn_.end()) {
+    auto one_user = conns_.find(cli_sock);
+    if (one_user == conns_.end()) {
         return;
     }
 
-    conn_.erase(cli_sock);
+    one_user->second->close_conn();
+    conns_.erase(cli_sock);
+    FdUtil::epoll_del_fd(epoll_fd_, cli_sock);
     close(cli_sock);
 }
 
 void LiteWebServer::deal_conn_in(int cli_sock)
 {
-    auto one_user = conn_.find(cli_sock);
-    if (one_user == conn_.end()) {
+    auto one_user = conns_.find(cli_sock);
+    if (one_user == conns_.end()) {
         return;
     }
-    workerpool_.enqueue(&UserConn::process_in, one_user->second.get());
+    workerpool_.enqueue(UserConn::static_process_in, one_user->second);
 }
 
 void LiteWebServer::deal_conn_out(int cli_sock)
 {
-    auto one_user = conn_.find(cli_sock);
-    if (one_user == conn_.end()) {
+    auto one_user = conns_.find(cli_sock);
+    if (one_user == conns_.end()) {
         return;
     }
-    workerpool_.enqueue(&UserConn::process_out, one_user->second.get());
+    workerpool_.enqueue(UserConn::static_process_out, one_user->second);
 }
 
 void LiteWebServer::modify_conn_event_read(int cli_sock)
