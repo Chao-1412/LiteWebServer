@@ -16,6 +16,8 @@ HttpRequest::HttpRequest()
     , path_("")
     , http_ver_("")
     , body_("")
+    , headers_(10)   // 预分配大小，降低哈希开销，空间换时间
+    , param_(10)
     {}
 
 uint32_t HttpRequest::parse(const std::string &data, uint32_t start_idx)
@@ -83,6 +85,16 @@ std::string HttpRequest::get_http_ver() const
     return http_ver_;
 }
 
+bool HttpRequest::get_header(std::string &val, const std::string &key) const
+{
+    auto it = headers_.find(key);
+    if (it == headers_.end()) {
+        return false;
+    }
+    val = it->second;
+    return true;
+}
+
 bool HttpRequest::get_param(std::string &val, const std::string &key) const
 {
     auto it = param_.find(key);
@@ -94,10 +106,21 @@ bool HttpRequest::get_param(std::string &val, const std::string &key) const
     return true;
 }
 
-bool HttpRequest::get_body(std::string &body) const
+void HttpRequest::reset()
 {
-    body = body_;
-    return true;
+    state_ = ParseState::PARSE_REQ_LINE;
+    is_bad_req_ = false;
+    method_ = HttpMethod::UNKNOWN;
+    path_.clear();
+    http_ver_.clear();
+    headers_.clear();
+    param_.clear();
+    body_.clear();
+}
+
+const std::string& HttpRequest::get_body() const
+{
+    return body_;
 }
 
 void HttpRequest::dump_data()
@@ -334,4 +357,172 @@ uint32_t HttpRequest::parse_req_body(const std::string &data, uint32_t start_idx
     }
 
     return parsed_bytes;
+}
+
+
+HttpResponse::HttpResponse(const HttpRequest &req)
+    : http_ver_(req.get_http_ver())
+    , code_(HttpCode::OK)
+    , headers_({{"Content-Type", "text/html; charset=UTF-8"},
+                {"Connection", "close"}}, 10)   // 预分配大小，降低哈希开销，空间换时间
+    , maked_base_rsp_(false)
+    , base_rsp_("")
+    , body_("")
+    , body_type_(HttpContentType::HTML_TYPE)
+{
+    req.get_header(headers_["Connection"], "Connection");
+}
+
+void HttpResponse::set_code(HttpCode code)
+{
+    maked_base_rsp_ = false;
+    code_ = code;
+}
+
+void HttpResponse::header_oper(HeaderOper oper, const std::string &key, const std::string &val)
+{
+    if (oper == HeaderOper::ADD || oper == HeaderOper::MODIFY) {
+        headers_[key] = val;
+        maked_base_rsp_ = false;
+    } else if (oper == HeaderOper::DEL) {
+        const auto &it = headers_.find(key);
+        if (it != headers_.end()) {
+            headers_.erase(it);
+            maked_base_rsp_ = false;
+        }
+    } else if (oper == HeaderOper::CLEAR) {
+        headers_.clear();
+        maked_base_rsp_ = false;
+    }
+}
+
+bool HttpResponse::get_header(const std::string &key, std::string &val) const
+{
+    const auto &it = headers_.find(key);
+    if (it == headers_.end()) {
+        return false;
+    }
+    val = it->second;
+    return true;
+}
+
+void HttpResponse::set_body(HttpContentType type, const std::string &data)
+{
+    body_type_ = type;
+
+    // 现在默认是UTF-8编码
+    header_oper(HeaderOper::MODIFY, "Content-Type",
+                http_enum_to_str<HttpContentType>(type) + std::string("; charset=UTF-8"));
+
+    if (!((int)body_type_ & (int)HttpContentType::FILE_TYPE)) {
+        // 不是文件类型，直接计算"Content-Length"，文件类型的需要手动设置长度
+        header_oper(HeaderOper::ADD, "Content-Length", std::to_string(data.size()));
+    }
+
+    body_ = data;
+}
+
+HttpContentType HttpResponse::get_body_type() const
+{
+    return body_type_;
+}
+
+bool HttpResponse::body_is_file() const
+{
+    return body_type_ == HttpContentType::FILE_TYPE;
+}
+
+const std::string &HttpResponse::get_body() const
+{
+    return body_;
+}
+
+const std::string &HttpResponse::get_base_rsp()
+{
+    if (!maked_base_rsp_) {
+        make_base_rsp();
+    }
+
+    return base_rsp_;
+}
+
+void HttpResponse::reset()
+{
+    http_ver_.clear();
+    code_ = HttpCode::OK;
+    headers_.clear();
+    headers_.emplace("Content-Type", "text/html; charset=UTF-8");
+    headers_.emplace("Connection", "close");
+    maked_base_rsp_ = false;
+    base_rsp_.clear();
+    body_.clear();
+    body_type_ = HttpContentType::HTML_TYPE;
+}
+
+void HttpResponse::dump_data()
+{
+    std::cout << "====================================" << std::endl;
+    std::cout << "Current http rsp data:" << std::endl;
+    std::cout << "code: " << static_cast<int>(code_)
+              << " "
+              << http_enum_to_str<HttpCode>(code_)
+              << std::endl;
+    std::cout << "header:" << std::endl;
+    for (const auto &kv : headers_) {
+        std::cout << "    " << kv.first << ": " << kv.second << std::endl;
+    }
+}
+
+void HttpResponse::make_base_rsp()
+{
+    if (maked_base_rsp_) {
+        return;
+    }
+
+    base_rsp_.clear();
+    base_rsp_ = http_ver_ + " "
+                + std::to_string((int)code_) + " " + http_enum_to_str(code_) + "\r\n";
+    for (const auto &kv : headers_) {
+        base_rsp_ += kv.first + ": " + kv.second + "\r\n";
+    }
+    base_rsp_ += "\r\n";
+
+    maked_base_rsp_ = true;
+}
+
+HttpResponse def_err_handler(HttpCode code, const HttpRequest &req)
+{
+    HttpResponse rsp(req);
+    rsp.set_code(code);
+    rsp.header_oper(HttpResponse::HeaderOper::MODIFY,
+                    "Connection", "close");
+
+    std::string err_body1 = "<!DOCTYPE html>\r\n"
+                           "<html>\r\n"
+                           "<head><title>Lite Web Server</title></head>\r\n"
+                           "<body><h1>";
+    std::string err_body2 = std::string(http_enum_to_str<HttpCode>(code)) + ".</h1></body>\r\n</html>\r\n";
+    rsp.set_body(HttpContentType::HTML_TYPE, err_body1 + err_body2);
+
+    return rsp;
+}
+
+HttpResponse err_handler_400(const HttpRequest &req)
+{
+    return def_err_handler(HttpCode::BAD_REQUEST, req);
+}
+
+HttpResponse err_handler_404(const HttpRequest &req)
+{
+    return def_err_handler(HttpCode::NOT_FOUND, req);
+}
+
+HttpResponse err_handler_405(const HttpRequest &req)
+{
+    return def_err_handler(HttpCode::NOT_ALLOWED, req);
+}
+
+HttpResponse err_handler_500(const HttpRequest &req)
+{
+    return def_err_handler(HttpCode::INTERNAL_SERVER_ERROR, req);
 }

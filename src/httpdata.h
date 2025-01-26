@@ -39,6 +39,7 @@ enum class HttpMethod
     X(BAD_REQUEST, 400, "Bad Request")  \
     X(NOT_FOUND, 404, "Not Found")      \
     X(FORBIDDEN, 403, "Forbidden")      \
+    X(NOT_ALLOWED, 405, "Method Not Allowed") \
     X(INTERNAL_SERVER_ERROR, 500, "Internal Server Error") \
 
 enum class HttpCode
@@ -58,6 +59,20 @@ enum class HttpVersion
 {
     #define X(NAME, DESC) NAME,
     HTTPVERSION_ENUM
+    #undef X
+};
+
+// new HttpContentType enum insert here
+#define HTTPCONTENTTYPE_ENUM \
+    X(UNKNOWN, 0x00, "")   \
+    X(FILE_TYPE, 0x01, "")   \
+    X(HTML_TYPE, 0x02, "text/html")   \
+    X(JSON_TYPE, 0x04, "application/json")   \
+
+enum class HttpContentType
+{
+    #define X(NAME, CODE, DESC) NAME = CODE,
+    HTTPCONTENTTYPE_ENUM
     #undef X
 };
 
@@ -121,6 +136,31 @@ constexpr HttpVersion http_str_to_enum<HttpVersion>(const char* str)
     return HttpVersion::UNKNOWN;
 }
 
+template<>
+constexpr const char* http_enum_to_str<HttpContentType>(HttpContentType e)
+{
+    e = static_cast<HttpContentType>(
+        static_cast<int>(e) & ~static_cast<int>(HttpContentType::FILE_TYPE)
+    );
+
+    switch (e) {
+        #define X(NAME, CODE, DESC) case HttpContentType::NAME: return DESC;
+        HTTPCONTENTTYPE_ENUM
+        #undef X
+        default: return "";
+    }
+}
+
+template<>
+constexpr HttpContentType http_str_to_enum<HttpContentType>(const char* str)
+{
+    #define X(NAME, CODE, DESC) if (StringUtil::ch_str_is_equal(str, DESC)) return HttpContentType::NAME;
+    HTTPCONTENTTYPE_ENUM
+    #undef X
+    return HttpContentType::UNKNOWN;
+}
+
+
 class HttpRequest
 {
 private:
@@ -167,6 +207,14 @@ public:
     std::string get_path() const;
     std::string get_http_ver() const;
     /**
+     * @brief 获取请求头
+     * @param val 输出参数值
+     * @param key 参数名
+     * @return true 获取成功
+     * @return false 获取失败
+     */
+    bool get_header(std::string &val, const std::string &key) const;
+    /**
      * @brief 获取请求参数
      * @param val 输出参数值
      * @param key 参数名
@@ -175,7 +223,8 @@ public:
      */
     bool get_param(std::string &val, const std::string &key) const;
     //TODO 添加解析body的方法
-    bool get_body(std::string &body) const;
+    void reset();
+    const std::string& get_body() const;
     void dump_data();
 
 private:
@@ -194,6 +243,7 @@ private:
     std::string path_;
     std::string http_ver_;
     //TODO 使用shared_ptr优化内存和执行效率！
+    //TODO unordered_map or map?
     std::unordered_map<std::string, std::string> headers_;
     std::unordered_map<std::string, std::string> param_;
     std::string body_;
@@ -201,6 +251,57 @@ private:
 
 class HttpResponse
 {
+public:
+    enum class HeaderOper {
+        ADD,
+        DEL,
+        MODIFY,
+        CLEAR
+    };
+
+public:
+    HttpResponse(const HttpRequest &req);
+
+public:
+    void set_code(HttpCode code);
+    /**
+     * @brief 设置响应头
+     * @param oper 操作类型
+     * @param key 键
+     * @param val 值，DEL操作时，val可以为空或不传递
+     */
+    void header_oper(HeaderOper oper, const std::string &key, const std::string &val);
+    bool get_header(const std::string &key, std::string &val) const;
+    /**
+     * @brief 设置响应体
+     * @param type 响应体类型，FILE_DATA需要和其他类型一起使用
+     * @param data 响应体数据
+     */
+    void set_body(HttpContentType type, const std::string &data);
+    HttpContentType get_body_type() const;
+    bool body_is_file() const;
+    const std::string& get_body() const;
+    const std::string& get_base_rsp();
+    void reset();
+    void dump_data();
+
+private:
+    void make_base_rsp();
+
+private:
+    std::string http_ver_;
+    HttpCode code_;
+    std::unordered_map<std::string, std::string> headers_;
+    bool maked_base_rsp_;
+    std::string base_rsp_;
+    std::string body_;
+    HttpContentType body_type_;
 };
 
-#endif
+HttpResponse def_err_handler(HttpCode code, const HttpRequest &req);
+HttpResponse err_handler_400(const HttpRequest &req);
+HttpResponse err_handler_404(const HttpRequest &req);
+HttpResponse err_handler_405(const HttpRequest &req);
+HttpResponse err_handler_500(const HttpRequest &req);
+
+#endif //HTTPDATA_H_
