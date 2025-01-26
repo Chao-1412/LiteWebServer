@@ -148,7 +148,6 @@ TEST(HttpRequestTest, Parse) {
 
     // 2
     HttpRequest httpReq11;
-    std::string req_body;
     std::string data13 = "POST /submit HTTP/1.1\r\n"
                          "Host: www.example.com\r\n"
                          "Content-Type: application/x-www-form-urlencoded\r\n"
@@ -158,7 +157,7 @@ TEST(HttpRequestTest, Parse) {
     uint32_t parsedBytes15 = httpReq11.parse(data13, 0);
     EXPECT_TRUE(httpReq11.parse_complete());
     EXPECT_FALSE(httpReq11.is_bad_req());
-    httpReq11.get_body(req_body);
+    const std::string& req_body = httpReq11.get_body();
     EXPECT_EQ(req_body, "field1=value1&field2=value2");
 
     // 3
@@ -177,7 +176,6 @@ TEST(HttpRequestTest, Parse) {
 
     // 4
     HttpRequest httpReq13;
-    std::string req_body1;
     std::string data15 = "POST /submit HTTP/1.1\r\n"
                          "Host: www.example.com\r\n"
                          "Content-Type: application/json\r\n"
@@ -190,7 +188,7 @@ TEST(HttpRequestTest, Parse) {
     uint32_t parsedBytes19 = httpReq13.parse(data15, parsedBytes18);
     EXPECT_TRUE(httpReq13.parse_complete());
     EXPECT_EQ(parsedBytes18 + parsedBytes19, data15.size());
-    httpReq13.get_body(req_body1);
+    const std::string& req_body1 = httpReq13.get_body();
     EXPECT_EQ(req_body1, "{\"req\":{\"name\":\"wu\",\"age\":18}}");
 
     /**
