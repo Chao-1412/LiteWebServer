@@ -31,6 +31,7 @@ public:
      * @return epoll_ctl的返回值，详细错误和epoll_ctl一致通过errno获取
      */
     static int epoll_mod_fd_oneshot(int epollfd, int fd, uint32_t events);
+    static int epoll_del_fd(int epollfd, int fd);
 };
 
 inline int FdUtil::set_nonblocking(int fd)
@@ -61,6 +62,11 @@ inline int FdUtil::epoll_mod_fd_oneshot(int epollfd, int fd, uint32_t events)
     sock_event.data.fd = fd;
     sock_event.events = events | EPOLLONESHOT;
     return epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &sock_event);
+}
+
+inline int FdUtil::epoll_del_fd(int epollfd, int fd)
+{
+    return epoll_ctl(epollfd, EPOLL_CTL_DEL, fd, NULL);
 }
 
 #endif // SRC_FD_UTIL_
