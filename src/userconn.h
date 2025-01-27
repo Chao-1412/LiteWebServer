@@ -38,14 +38,29 @@ public:
         , body_snd_(false)
         , rsp_base_snd_bytes_(0)
         , rsp_body_snd_bytes_(0)
+        , file_fd_(-1)
         {}
+    ~UserConn();
+    // 五法则，实现拷贝，移动，析构中的任意一个，都需要将其他四个实现
+    UserConn(const UserConn &) = delete;
+    UserConn &operator=(const UserConn &) = delete;
+    UserConn(UserConn &&) = delete;
+    UserConn &operator=(UserConn &&) = delete;
+
+public:
     void process_in();
     void process_out();
-    void close_conn();
+    void close_conn() { std::lock_guard<std::mutex> lock(mtx_); closed_ = true; }
 
 private:
     bool recv_from_cli();
     void route_path();
+    void close_file_fd() {
+        if (file_fd_!= -1) {
+            close(file_fd_);
+            file_fd_ = -1;
+        }
+    }
     bool send_to_cli();
     void send_base_rsp();
     void send_body();
@@ -53,7 +68,17 @@ private:
      * @brief 重置连接状态
      *        当完成一次完整的收发请求后，如果该链接需要继续使用，就需要重置连接状态
      */
-    void conn_state_reset();
+    void conn_state_reset() {
+        buffer_r_.clear();
+        req_.reset();
+        req_parsed_bytes_ = 0;
+        rsp_.reset();
+        base_rsp_snd_ = false;
+        body_snd_ = false;
+        rsp_base_snd_bytes_ = 0;
+        rsp_body_snd_bytes_ = 0;
+        close_file_fd();
+    }
 
 private:
     static std::map<HttpCode, HandleFunc> err_handler_;
@@ -73,6 +98,7 @@ private:
     bool body_snd_;
     uint32_t rsp_base_snd_bytes_;
     uint32_t rsp_body_snd_bytes_;
+    int file_fd_;
 };
 
 #endif  // SRC_USER_CONN_H_
