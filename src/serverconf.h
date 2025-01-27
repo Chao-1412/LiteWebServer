@@ -16,7 +16,7 @@ public:
                uint16_t epoll_max_events = 100,
                uint16_t buffer_size_r = 2048,
                uint16_t buffer_size_w = 2048,
-               std::string www_root_path = "/var/www/")
+               std::string www_root_path = "/var/www")
         : port_(port)
         , nthread_(nthread)
         , listen_queue_n_(listen_queue_n)
