@@ -31,6 +31,11 @@ void UserConn::static_process_out(std::shared_ptr<UserConn> conn)
     conn->process_out();
 }
 
+UserConn::~UserConn()
+{
+    close_file_fd();
+}
+
 void UserConn::process_in()
 {
     // 接收数据
@@ -55,6 +60,14 @@ void UserConn::process_out()
 {
     route_path();
 
+    if (rsp_.body_is_file()) {
+        std::string file_path = conf_->www_root_path_ + rsp_.get_body();
+        file_fd_ = open(file_path.c_str(), O_RDONLY);
+        if (file_fd_ < 0) {
+            rsp_ = err_handler_[HttpCode::INTERNAL_SERVER_ERROR](req_);
+        }
+    }
+
     if (!send_to_cli()) {
         srv_inst_->modify_conn_event_write(cli_sock_);
     } else {
@@ -68,12 +81,6 @@ void UserConn::process_out()
             srv_inst_->modify_conn_event_read(cli_sock_);
         }
     }
-}
-
-void UserConn::close_conn()
-{
-    std::lock_guard<std::mutex> lock(mtx_);
-    closed_ = true;
 }
 
 //BUG 需要考虑数据很大，撑爆缓冲区满的情况
@@ -201,16 +208,4 @@ void UserConn::send_body()
             rsp_body_snd_bytes_ += send_bytes;
         }
     }
-}
-
-void UserConn::conn_state_reset()
-{
-    buffer_r_.clear();
-    req_.reset();
-    req_parsed_bytes_ = 0;
-    rsp_.reset();
-    base_rsp_snd_ = false;
-    body_snd_ = false;
-    rsp_base_snd_bytes_ = 0;
-    rsp_body_snd_bytes_ = 0;
 }
