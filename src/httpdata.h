@@ -194,7 +194,7 @@ public:
      * @return true 解析完毕
      * @return false 解析未完毕
      */
-    bool parse_complete() const;
+    bool parse_complete() const { return state_ == ParseState::PARSE_SUCCESS; }
     /**
      * @brief 判断是否是非法请求，
      *        使用前需要先调用parse_complete来判断是否解析完毕
@@ -202,10 +202,10 @@ public:
      * @return true 是非法请求
      * @return false 不是非法请求
      */
-    bool is_bad_req() const;
-    HttpMethod get_method() const;
-    std::string get_path() const;
-    std::string get_http_ver() const;
+    bool is_bad_req() const { return is_bad_req_; }
+    HttpMethod get_method() const { return method_; }
+    std::string get_path() const { return path_; }
+    std::string get_http_ver() const { return http_ver_; }
     /**
      * @brief 获取请求头
      * @param val 输出参数值
@@ -223,12 +223,21 @@ public:
      */
     bool get_param(std::string &val, const std::string &key) const;
     //TODO 添加解析body的方法
-    void reset();
-    const std::string& get_body() const;
+    void reset() {
+        state_ = ParseState::PARSE_REQ_LINE;
+        is_bad_req_ = false;
+        method_ = HttpMethod::UNKNOWN;
+        path_.clear();
+        http_ver_.clear();
+        headers_.clear();
+        param_.clear();
+        body_.clear();
+    }
+    const std::string& get_body() const { return body_; }
     void dump_data();
 
 private:
-    void set_bad_req();
+    void set_bad_req() { is_bad_req_ = true; state_ = ParseState::PARSE_SUCCESS; }
     //TODO 需要优化
     uint32_t parse_req_line(const std::string &data, uint32_t start_idx);
     bool parse_uri(const std::string &uri);
@@ -263,7 +272,7 @@ public:
     HttpResponse(const HttpRequest &req);
 
 public:
-    void set_code(HttpCode code);
+    void set_code(HttpCode code) { maked_base_rsp_ = false; code_ = code; }
     /**
      * @brief 设置响应头
      * @param oper 操作类型
@@ -278,11 +287,24 @@ public:
      * @param data 响应体数据
      */
     void set_body(HttpContentType type, const std::string &data);
-    HttpContentType get_body_type() const;
-    bool body_is_file() const;
-    const std::string& get_body() const;
-    const std::string& get_base_rsp();
-    void reset();
+    HttpContentType get_body_type() const { return body_type_; }
+    bool body_is_file() const { return body_type_ == HttpContentType::FILE_TYPE; }
+    const std::string& get_body() const { return body_; }
+    const std::string& get_base_rsp() {
+        if (!maked_base_rsp_) { make_base_rsp(); }
+        return base_rsp_;
+    }
+    void reset() {
+        http_ver_.clear();
+        code_ = HttpCode::OK;
+        headers_.clear();
+        headers_.emplace("Content-Type", "text/html; charset=UTF-8");
+        headers_.emplace("Connection", "close");
+        maked_base_rsp_ = false;
+        base_rsp_.clear();
+        body_.clear();
+        body_type_ = HttpContentType::HTML_TYPE;
+    }
     void dump_data();
 
 private:

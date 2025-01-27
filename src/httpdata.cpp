@@ -60,31 +60,6 @@ uint32_t HttpRequest::parse(const std::string &data, uint32_t start_idx)
     return parsed_bytes;
 }
 
-bool HttpRequest::parse_complete() const
-{
-    return state_ == ParseState::PARSE_SUCCESS;
-}
-
-bool HttpRequest::is_bad_req() const
-{
-    return is_bad_req_;
-}
-
-HttpMethod HttpRequest::get_method() const
-{
-    return method_;
-}
-
-std::string HttpRequest::get_path() const
-{
-    return path_;
-}
-
-std::string HttpRequest::get_http_ver() const
-{
-    return http_ver_;
-}
-
 bool HttpRequest::get_header(std::string &val, const std::string &key) const
 {
     auto it = headers_.find(key);
@@ -104,23 +79,6 @@ bool HttpRequest::get_param(std::string &val, const std::string &key) const
 
     val = it->second;
     return true;
-}
-
-void HttpRequest::reset()
-{
-    state_ = ParseState::PARSE_REQ_LINE;
-    is_bad_req_ = false;
-    method_ = HttpMethod::UNKNOWN;
-    path_.clear();
-    http_ver_.clear();
-    headers_.clear();
-    param_.clear();
-    body_.clear();
-}
-
-const std::string& HttpRequest::get_body() const
-{
-    return body_;
 }
 
 void HttpRequest::dump_data()
@@ -147,12 +105,6 @@ void HttpRequest::dump_data()
     for (const auto &kv : param_) {
         std::cout << "    " << kv.first << ": " << kv.second << std::endl;
     }
-}
-
-void HttpRequest::set_bad_req()
-{
-    is_bad_req_ = true;
-    state_ = ParseState::PARSE_SUCCESS;
 }
 
 uint32_t HttpRequest::parse_req_line(const std::string &data, uint32_t start_idx)
@@ -373,12 +325,6 @@ HttpResponse::HttpResponse(const HttpRequest &req)
     req.get_header(headers_["Connection"], "Connection");
 }
 
-void HttpResponse::set_code(HttpCode code)
-{
-    maked_base_rsp_ = false;
-    code_ = code;
-}
-
 void HttpResponse::header_oper(HeaderOper oper, const std::string &key, const std::string &val)
 {
     if (oper == HeaderOper::ADD || oper == HeaderOper::MODIFY) {
@@ -420,43 +366,6 @@ void HttpResponse::set_body(HttpContentType type, const std::string &data)
     }
 
     body_ = data;
-}
-
-HttpContentType HttpResponse::get_body_type() const
-{
-    return body_type_;
-}
-
-bool HttpResponse::body_is_file() const
-{
-    return body_type_ == HttpContentType::FILE_TYPE;
-}
-
-const std::string &HttpResponse::get_body() const
-{
-    return body_;
-}
-
-const std::string &HttpResponse::get_base_rsp()
-{
-    if (!maked_base_rsp_) {
-        make_base_rsp();
-    }
-
-    return base_rsp_;
-}
-
-void HttpResponse::reset()
-{
-    http_ver_.clear();
-    code_ = HttpCode::OK;
-    headers_.clear();
-    headers_.emplace("Content-Type", "text/html; charset=UTF-8");
-    headers_.emplace("Connection", "close");
-    maked_base_rsp_ = false;
-    base_rsp_.clear();
-    body_.clear();
-    body_type_ = HttpContentType::HTML_TYPE;
 }
 
 void HttpResponse::dump_data()
