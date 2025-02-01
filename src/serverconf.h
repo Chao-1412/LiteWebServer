@@ -13,7 +13,7 @@ public:
                int listen_queue_n = 5,
                bool epoll_et_srv = false,
                bool epoll_et_conn = false,
-               uint16_t epoll_max_events = 100,
+               uint16_t epoll_max_events = 4096,
                uint16_t buffer_size_r = 2048,
                std::string www_root_path = "/var/www")
         : port_(port)
