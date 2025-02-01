@@ -20,6 +20,12 @@ set(SRC_FILE
 )
 
 add_executable(${TARGET} ${SRC_FILE})
+# 添加编译选项
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(${TARGET} PRIVATE /W4)
+endif()
 
 
 # 测试
