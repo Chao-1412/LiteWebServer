@@ -10,8 +10,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include <unistd.h>
+
 #include "serverconf.h"
 #include "httpdata.h"
+
+#define HTTP_FILE_CHUNK_SIZE 64 * 1024
 
 class LiteWebServer;
 
@@ -30,7 +34,8 @@ public:
         : srv_inst_(srv_inst)
         , conf_(conf)
         , cli_sock_(cli_sock)
-        , buffer_r_(std::string(conf_->buffer_size_r_, '\0'))
+        , buffer_r_(conf_->buffer_size_r_, '\0')
+        , buffer_r_bytes_(0)
         , req_parsed_bytes_(0)
         , rsp_(req_)
         , closed_(false)
@@ -39,6 +44,7 @@ public:
         , rsp_base_snd_bytes_(0)
         , rsp_body_snd_bytes_(0)
         , file_fd_(-1)
+        , file_size_(0)
         {}
     ~UserConn();
     // 五法则，实现拷贝，移动，析构中的任意一个，都需要将其他四个实现
@@ -59,6 +65,7 @@ private:
         if (file_fd_!= -1) {
             close(file_fd_);
             file_fd_ = -1;
+            file_size_ = 0;
         }
     }
     bool send_to_cli();
@@ -69,10 +76,11 @@ private:
      *        当完成一次完整的收发请求后，如果该链接需要继续使用，就需要重置连接状态
      */
     void conn_state_reset() {
-        buffer_r_.clear();
+        buffer_r_bytes_ = 0;
         req_.reset();
         req_parsed_bytes_ = 0;
         rsp_.reset();
+        closed_ = false;
         base_rsp_snd_ = false;
         body_snd_ = false;
         rsp_base_snd_bytes_ = 0;
@@ -89,6 +97,7 @@ private:
     const ServerConf *const conf_;
     int cli_sock_;
     std::string buffer_r_;
+    std::size_t buffer_r_bytes_;
     HttpRequest req_;
     uint32_t req_parsed_bytes_;
     HttpResponse rsp_;
@@ -97,8 +106,9 @@ private:
     bool base_rsp_snd_;
     bool body_snd_;
     uint32_t rsp_base_snd_bytes_;
-    uint32_t rsp_body_snd_bytes_;
+    off_t rsp_body_snd_bytes_;
     int file_fd_;
+    off_t file_size_;
 };
 
 #endif  // SRC_USER_CONN_H_

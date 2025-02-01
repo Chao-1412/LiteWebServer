@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
+#include <mutex>
 
 #include <sys/epoll.h>
 
@@ -37,6 +38,7 @@ private:
     void init_log();
     void create_listen_serve();
     void register_signal();
+    void ignore_SIGPIPE();
     void deal_new_conn();
     void disconn_one(int cli_sock);
     void deal_conn_in(int cli_sock);
@@ -52,6 +54,7 @@ private:
     chaos::ThreadPool workerpool_;
     struct epoll_event *events_;
     std::unordered_map<int, std::shared_ptr<UserConn> > conns_;
+    std::mutex conns_mtx_;
 };
 
 #endif //SRC_LITEWEBSERVER_H_

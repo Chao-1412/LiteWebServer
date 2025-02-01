@@ -1,5 +1,7 @@
 #include <cstdio>
 #include <cstring>
+#include <map>
+#include <iostream>
 
 #include <errno.h>
 #include <unistd.h>
@@ -9,44 +11,57 @@
 #include <arpa/inet.h>
 
 #include "litewebserver.h"
+#include "userconn.h"
 
 
-static void print_errno_info(const char *const extra_msg)
-{
-    if (extra_msg) {
-        printf("%s, no: %d, msg: %s\n", extra_msg, errno, strerror(errno));
-    } else {
-        printf("no: %d, msg: %s\n", errno, strerror(errno));
-    }
-}
+// static void print_errno_info(const char *const extra_msg)
+// {
+//     if (extra_msg) {
+//         printf("%s, no: %d, msg: %s\n", extra_msg, errno, strerror(errno));
+//     } else {
+//         printf("no: %d, msg: %s\n", errno, strerror(errno));
+//     }
+// }
 
-static void handle_client(int client_sock)
-{
-    char buffer[1024];
+// static void handle_client(int client_sock)
+// {
+//     char buffer[1024];
     
-    // 读取客户端请求
-    int bytes_received = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
-    if (bytes_received < 0) {
-        print_errno_info("recv failed");
-        return;
-    }
-    buffer[bytes_received] = '\0';  // 确保字符串以 null 结尾
+//     // 读取客户端请求
+//     int bytes_received = recv(client_sock, buffer, sizeof(buffer) - 1, 0);
+//     if (bytes_received < 0) {
+//         print_errno_info("recv failed");
+//         return;
+//     }
+//     buffer[bytes_received] = '\0';  // 确保字符串以 null 结尾
 
-    printf("Request received:\n%s\n", buffer);
+//     printf("Request received:\n%s\n", buffer);
 
-    // 发送 HTTP 响应
-    const char *http_response =
-        "HTTP/1.1 200 OK\r\n"
-        "Content-Type: text/html; charset=UTF-8\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-        "<!DOCTYPE html>\r\n"
-        "<html>\r\n"
-        "<head><title>Simple Web Server</title></head>\r\n"
-        "<body><h1>Hello, World! This is a simple web server.</h1></body>\r\n"
-        "</html>\r\n";
+//     // 发送 HTTP 响应
+//     const char *http_response =
+//         "HTTP/1.1 200 OK\r\n"
+//         "Content-Type: text/html; charset=UTF-8\r\n"
+//         "Connection: close\r\n"
+//         "\r\n"
+//         "<!DOCTYPE html>\r\n"
+//         "<html>\r\n"
+//         "<head><title>Simple Web Server</title></head>\r\n"
+//         "<body><h1>Hello, World! This is a simple web server.</h1></body>\r\n"
+//         "</html>\r\n";
     
-    send(client_sock, http_response, strlen(http_response), 0);
+//     send(client_sock, http_response, strlen(http_response), 0);
+// }
+
+static const std::string index_body = "<!DOCTYPE html>\r\n"
+                                      "<html>\r\n"
+                                      "<head><title>Simple Web Server</title></head>\r\n"
+                                      "<body><h1>Hello, World! This is a simple web server.</h1></body>\r\n"
+                                      "</html>\r\n";
+HttpResponse index_page(const HttpRequest &req)
+{
+    HttpResponse rsp(req);
+    rsp.set_body(HttpContentType::HTML_TYPE, index_body);
+    return rsp;
 }
 
 
@@ -118,9 +133,18 @@ int main()
 
 //     return ret;
 
+    UserConn::register_router("/", HttpMethod::GET, index_page);
+    UserConn::register_router("/json", HttpMethod::GET,
+        [](const HttpRequest &req) -> HttpResponse {
+            HttpResponse rsp(req);
+            std::string json_data = "{\"name\": \"John\", \"age\": 30}";
+            rsp.set_body(HttpContentType::JSON_TYPE, json_data);
+            return rsp;
+        }
+    );
     ServerConf conf(8080);
     LiteWebServer server(conf);
     server.start_loop();
 
     return 0;
-}
+ }

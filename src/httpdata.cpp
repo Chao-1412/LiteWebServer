@@ -15,9 +15,9 @@ HttpRequest::HttpRequest()
     , method_(HttpMethod::UNKNOWN)
     , path_("")
     , http_ver_("")
-    , body_("")
     , headers_(10)   // 预分配大小，降低哈希开销，空间换时间
     , param_(10)
+    , body_("")
     {}
 
 uint32_t HttpRequest::parse(const std::string &data, uint32_t start_idx)

@@ -3,10 +3,13 @@
 #include <string>
 
 #include <sys/socket.h>
+#include <sys/sendfile.h>
 
-#include <spdlog/spdlog.h>
+#include "spdlog/spdlog.h"
 
 #include "litewebserver.h"
+#include "debughelper.h"
+
 
 std::map<HttpCode, UserConn::HandleFunc> UserConn::err_handler_ = {
     {HttpCode::BAD_REQUEST, err_handler_400},
@@ -41,12 +44,16 @@ void UserConn::process_in()
     // 接收数据
     bool ret = recv_from_cli();
     if (ret != true) {
+        // SPDLOG_DEBUG("recv failed, regist read event, cli_sock: {}", cli_sock_);
         srv_inst_->modify_conn_event_read(cli_sock_);
         return;
     }
+    // SPDLOG_DEBUG("recv from client, cli_sock: {}, data: {}", cli_sock_, buffer_r_);
+
     // 解析收到的数据
     req_parsed_bytes_ += req_.parse(buffer_r_, req_parsed_bytes_);
     if (!req_.parse_complete()) {
+        // SPDLOG_DEBUG("parse failed, regist read event, cli_sock: {}", cli_sock_);
         srv_inst_->modify_conn_event_read(cli_sock_);
         return;
     }
@@ -54,18 +61,27 @@ void UserConn::process_in()
     // 返回数据生成后注册epoll写事件，待可写事件触发后
     // 会调用UserConn::process_out，进行处理
     srv_inst_->modify_conn_event_write(cli_sock_);
+    // SPDLOG_DEBUG("parse successed, regist write event, cli_sock: {}", cli_sock_);
 }
 
 void UserConn::process_out()
 {
     route_path();
 
+    // 如果是文件类型，先打开文件
+    // 打不开的话，返回500错误
     if (rsp_.body_is_file()) {
         std::string file_path = conf_->www_root_path_ + rsp_.get_body();
         file_fd_ = open(file_path.c_str(), O_RDONLY);
         if (file_fd_ < 0) {
             rsp_ = err_handler_[HttpCode::INTERNAL_SERVER_ERROR](req_);
+            // SPDLOG_INFO("open file failed, code: {}, msg: {}", errno, strerror(errno));
         }
+        struct stat file_stat;
+        fstat(file_fd_, &file_stat);
+        file_size_ = file_stat.st_size;
+        rsp_.header_oper(HttpResponse::HeaderOper::MODIFY,
+                         "Content-Length", std::to_string(file_size_));
     }
 
     if (!send_to_cli()) {
@@ -75,6 +91,7 @@ void UserConn::process_out()
         rsp_.get_header("Connection", conn_state);
         if (conn_state == "close") {
             srv_inst_->disconn_one(cli_sock_);
+            // SPDLOG_INFO("Client want to close connection");
         } else {
             // 如果不是直接断开链接，则重置连接状态
             conn_state_reset();
@@ -87,8 +104,8 @@ void UserConn::process_out()
 //TODO 最好一次性把数据读完，而不是每次epollin读一次，优化性能
 bool UserConn::recv_from_cli()
 {
-    size_t remain_size = conf_->buffer_size_r_ - buffer_r_.size();
-    char *read_begin = buffer_r_.data() + buffer_r_.size();
+    size_t remain_size = buffer_r_.size() - buffer_r_bytes_;
+    char *read_begin = &(*buffer_r_.begin()) + buffer_r_bytes_;
 
     ssize_t recv_bytes = 0;
     {
@@ -109,7 +126,7 @@ bool UserConn::recv_from_cli()
         //（目前考虑到的EAGAIN EWOULDBLOCK EINTR）都有处理，不知道还有没有其他的
         return false;
     } else {
-        buffer_r_.resize(buffer_r_.size() + recv_bytes);
+        buffer_r_bytes_ += recv_bytes;
     }
 
     return true;
@@ -173,7 +190,7 @@ void UserConn::send_base_rsp()
         if (send_bytes <= 0) {
             // 主线程会根据epoll触发的事件进行处理
             //（目前考虑到的EAGAIN EWOULDBLOCK EINTR）都有处理，不知道还有没有其他的
-            SPDLOG_ERROR("send to client failed, code: {}, msg: {}", errno, strerror(errno));
+            // SPDLOG_ERROR("send to client failed, code: {}, msg: {}", errno, strerror(errno));
             return;
         }
         rsp_base_snd_bytes_ += send_bytes;
@@ -187,7 +204,22 @@ void UserConn::send_body()
     std::lock_guard<std::mutex> lock(mtx_);
     while (!closed_) {
         if (rsp_.body_is_file()) {
-
+            send_bytes = file_size_ - rsp_body_snd_bytes_;
+            if (send_bytes <= 0) {
+                body_snd_ = true;
+                close_file_fd();
+                return;
+            }
+            if (send_bytes > HTTP_FILE_CHUNK_SIZE) {
+                send_bytes = HTTP_FILE_CHUNK_SIZE;
+            }
+            send_bytes = sendfile(cli_sock_, file_fd_, &rsp_body_snd_bytes_, send_bytes);
+            if (send_bytes <= 0) {
+                // 主线程会根据epoll触发的事件进行处理
+                //（目前考虑到的EAGAIN EWOULDBLOCK EINTR）都有处理，不知道还有没有其他的
+                // SPDLOG_ERROR("send to client failed, code: {}, msg: {}", errno, strerror(errno));
+                return;
+            }
         } else {
             size_t remain_size = rsp_.get_body().size() - rsp_body_snd_bytes_;
             const char *snd_beg = rsp_.get_body().data() + rsp_body_snd_bytes_;
@@ -202,7 +234,7 @@ void UserConn::send_body()
             if (send_bytes <= 0) {
                 // 主线程会根据epoll触发的事件进行处理
                 //（目前考虑到的EAGAIN EWOULDBLOCK EINTR）都有处理，不知道还有没有其他的
-                SPDLOG_ERROR("send to client failed, code: {}, msg: {}", errno, strerror(errno));
+                // SPDLOG_ERROR("send to client failed, code: {}, msg: {}", errno, strerror(errno));
                 return;
             }
             rsp_body_snd_bytes_ += send_bytes;
