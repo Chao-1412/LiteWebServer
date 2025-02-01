@@ -70,4 +70,9 @@ inline static std::string events_to_str(uint32_t events)
     return s;
 }
 
+inline static std::string buffer_data_to_str(std::string buffer, size_t data_bytes)
+{
+    return {buffer, 0, data_bytes};
+}
+
 #endif // SRC_DEBUG_HELPER_UTIL_H_
