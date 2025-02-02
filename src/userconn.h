@@ -48,6 +48,7 @@ public:
         {}
     ~UserConn();
     // 五法则，实现拷贝，移动，析构中的任意一个，都需要将其他四个实现
+    // 但目前这个类暂时用不到拷贝和移动，所以直接实现成delete
     UserConn(const UserConn &) = delete;
     UserConn &operator=(const UserConn &) = delete;
     UserConn(UserConn &&) = delete;
