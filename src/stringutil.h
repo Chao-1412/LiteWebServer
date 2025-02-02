@@ -1,5 +1,5 @@
-#ifndef STRING_UTIL_H_
-#define STRING_UTIL_H_
+#ifndef SRC_STRING_UTIL_H_
+#define SRC_STRING_UTIL_H_
 
 #include <vector>
 #include <string>
@@ -151,4 +151,4 @@ bool StringUtil::str_to_inum(T &ret, const std::string &str, F fn)
 
     return true;
 }
-#endif //STRING_UTIL_H_
+#endif //SRC_STRING_UTIL_H_
