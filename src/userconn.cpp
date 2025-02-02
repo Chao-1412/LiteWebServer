@@ -19,7 +19,7 @@ std::map<HttpCode, UserConn::HandleFunc> UserConn::err_handler_ = {
 };
 std::map<std::string, std::map<HttpMethod, UserConn::HandleFunc> > UserConn::router_;
 
-void UserConn::register_err_handler(HttpCode code, HandleFunc func)
+void UserConn::register_err_handler(const HttpCode &code, HandleFunc func)
 {
     err_handler_[code] = func;
 }

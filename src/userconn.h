@@ -23,8 +23,8 @@ class LiteWebServer;
 class UserConn {
 public:
     using HandleFunc = HttpResponse(*)(const HttpRequest&);
-    static void register_err_handler(HttpCode code, HandleFunc func);
-    static void register_router(const std::string &path, HttpMethod method,HandleFunc func);
+    static void register_err_handler(const HttpCode &code, HandleFunc func);
+    static void register_router(const std::string &path, HttpMethod method, HandleFunc func);
     static void static_process_in(std::shared_ptr<UserConn> conn);
     static void static_process_out(std::shared_ptr<UserConn> conn);
 
