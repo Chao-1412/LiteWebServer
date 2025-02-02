@@ -14,7 +14,7 @@ HttpRequest::HttpRequest()
     , is_bad_req_(false)
     , method_(HttpMethod::UNKNOWN)
     , path_("")
-    , http_ver_("")
+    , http_ver_("HTTP/1.1")
     , headers_(10)   // 预分配大小，降低哈希开销，空间换时间
     , param_(10)
     , body_("")
