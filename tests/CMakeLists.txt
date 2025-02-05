@@ -22,7 +22,9 @@ set(SRC_FILE
 )
 
 set(TEST_SRC_FILE
+    test_main.cpp
     test_httpdata.cpp
+    test_timer.cpp
 )
 
 # add the test executable

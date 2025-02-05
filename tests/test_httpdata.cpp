@@ -210,8 +210,3 @@ TEST(HttpRequestTest, Parse) {
     EXPECT_TRUE(httpReq14.parse_complete());
     EXPECT_FALSE(httpReq14.is_bad_req());
 }
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
