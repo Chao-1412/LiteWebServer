@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+#include "spdlog/spdlog.h"
+
 using SteadyClock = std::chrono::steady_clock;
 using MilliSeconds = std::chrono::milliseconds;
 constexpr const int DEF_CHK_MIN_TIME_MS = 10 * 1000;
@@ -94,8 +96,10 @@ public:
 
     void handle_expired_timers(std::vector<int> &expired)
     {
+        // SPDLOG_DEBUG("handle_expired_timers...");
         auto now = SteadyClock::now();
         if (now - last_chk_time_ < chk_min_time_) {
+            // SPDLOG_DEBUG("handle_expired_timers, wait for next chk min time");
             return;
         }
 
