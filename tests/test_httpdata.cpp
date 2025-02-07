@@ -29,7 +29,7 @@ TEST(HttpRequestTest, Parse) {
                         "\r\n";
     uint32_t parsedBytes2 = httpReq2.parse(data2, 0);
     EXPECT_EQ(parsedBytes2, data2.size());
-    got = httpReq2.get_param(val, "q");
+    got = httpReq2.get_param("q", val);
     EXPECT_TRUE(got);
     EXPECT_EQ(val, "test");
     
@@ -41,10 +41,10 @@ TEST(HttpRequestTest, Parse) {
                         "\r\n";
     uint32_t parsedBytes3 = httpReq3.parse(data3, 0);
     EXPECT_EQ(parsedBytes3, data3.size());
-    got = httpReq3.get_param(val, "q");
+    got = httpReq3.get_param("q", val);
     EXPECT_TRUE(got);
     EXPECT_EQ(val, "test");
-    got = httpReq3.get_param(val, "page");
+    got = httpReq3.get_param("page", val);
     EXPECT_TRUE(got);
     EXPECT_EQ(val, "2");
 
