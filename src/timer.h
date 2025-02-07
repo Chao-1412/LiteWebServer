@@ -54,17 +54,11 @@ public:
  *           在进行判断是否超时时，先判断id->expireTime的unordered_map中是否存在该id，以及超时时间是否正确
  *           如果不存在或者超时时间不正确，则直接从priority_queue中弹出该节点，不做任何操作，
  *           当遇到关闭的链接时也是同理，这样就减少了遍历，提高了性能
- * @param chk_min_time 最小检查周期，单位为毫秒，当外部调用timermanager周期小于该值时，不会立即检查，避免频繁获取锁降低性能
- * @note Accuracy 时间精度，单位为毫秒
  */
-template <typename Accuracy>
 class TimerManager {
 public:
-    TimerManager(Accuracy chk_min_time = 
-                   std::chrono::duration_cast<Accuracy>(MilliSeconds(DEF_CHK_MIN_TIME_MS)))
-        : chk_min_time_(chk_min_time)
-        , last_chk_time_(SteadyClock::now())
-        , timer_map_(10000) // 预分配空间，避免频繁扩容
+    TimerManager()
+        : timer_map_(10000) // 预分配空间，避免频繁扩容
         {}
 
 public:
@@ -84,26 +78,26 @@ public:
         timer_map_[node.id] = node.expire_;
     }
 
+    /**
+     * @brief 更新定时器
+     *        目前就是直接再添加一次
+     */
+    void update_timer(int id, SteadyClock::time_point expire_time)
+    {
+        add_timer(id, expire_time);
+    }
+
     void rm_timer(int id)
     {
         std::lock_guard<std::mutex> lock(mgr_mutex_);
-        auto one_timer = timer_map_.find(id);
-        if (one_timer == timer_map_.end()) {
-            return;
-        }
-        timer_map_.erase(one_timer);
+        timer_map_.erase(id);
     }
 
     void handle_expired_timers(std::vector<int> &expired)
     {
         // SPDLOG_DEBUG("handle_expired_timers...");
-        auto now = SteadyClock::now();
-        if (now - last_chk_time_ < chk_min_time_) {
-            // SPDLOG_DEBUG("handle_expired_timers, wait for next chk min time");
-            return;
-        }
-
         {
+            auto now = SteadyClock::now();
             std::lock_guard<std::mutex> lock(mgr_mutex_);
             while (!timer_queue_.empty()) {
                 auto top = timer_queue_.top();
@@ -123,14 +117,32 @@ public:
                 timer_map_.erase(top.id);
             }
         }
-
-        last_chk_time_ = now;   
     }
 
-    const TimerNode& get_top()
+    /**
+     * @brief 获取堆顶元素
+     * @note 仅作测试用，
+     *       因为timer_queue中存在重复元素，
+     *       所以查找正真的top元素需要拷贝副本，再遍历
+     * @return 成功正常返回，失败返回ID=-1的TimerNode
+     */
+    TimerNode get_top()
     {
         std::lock_guard<std::mutex> lock(mgr_mutex_);
-        return timer_queue_.top();
+        auto copy = timer_queue_;
+        
+        while (!copy.empty()) {
+            auto top = copy.top();
+            auto one_timer = timer_map_.find(top.id);
+            if (one_timer == timer_map_.end()
+                  || one_timer->second != top.expire_) {
+                copy.pop();
+                continue;
+            }
+            return top;
+        }
+
+        return TimerNode(-1, SteadyClock::now());
     }
  
     std::size_t queue_size()
@@ -140,12 +152,6 @@ public:
     }
 
 private:
-    // 内部最小检查周期和最后一次检查的时间
-    // 当外部调用timermanager小于该值时，不会立即检查
-    // 以免检查过于频繁影响性能
-    Accuracy chk_min_time_;
-    SteadyClock::time_point last_chk_time_;
-
     std::priority_queue<TimerNode,
                         std::deque<TimerNode>,
                         std::greater<TimerNode> > timer_queue_;
