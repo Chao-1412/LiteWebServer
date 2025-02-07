@@ -60,7 +60,7 @@ uint32_t HttpRequest::parse(const std::string &data, uint32_t start_idx)
     return parsed_bytes;
 }
 
-bool HttpRequest::get_header(std::string &val, const std::string &key) const
+bool HttpRequest::get_header(const std::string &key, std::string &val) const
 {
     auto it = headers_.find(key);
     if (it == headers_.end()) {
@@ -70,7 +70,7 @@ bool HttpRequest::get_header(std::string &val, const std::string &key) const
     return true;
 }
 
-bool HttpRequest::get_param(std::string &val, const std::string &key) const
+bool HttpRequest::get_param(const std::string &key, std::string &val) const
 {
     auto it = param_.find(key);
     if (it == param_.end()) {
@@ -322,7 +322,7 @@ HttpResponse::HttpResponse(const HttpRequest &req)
     , body_("")
     , body_type_(HttpContentType::HTML_TYPE)
 {
-    req.get_header(headers_["Connection"], "Connection");
+    req.get_header("Connection", headers_["Connection"]);
 }
 
 void HttpResponse::header_oper(HeaderOper oper, const std::string &key, const std::string &val)

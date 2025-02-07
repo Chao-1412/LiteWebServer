@@ -213,7 +213,7 @@ public:
      * @return true 获取成功
      * @return false 获取失败
      */
-    bool get_header(std::string &val, const std::string &key) const;
+    bool get_header(const std::string &key, std::string &val) const;
     /**
      * @brief 获取请求参数
      * @param val 输出参数值
@@ -221,7 +221,7 @@ public:
      * @return true 获取成功
      * @return false 获取失败
      */
-    bool get_param(std::string &val, const std::string &key) const;
+    bool get_param(const std::string &key, std::string &val) const;
     //TODO 添加解析body的方法
     void reset() {
         state_ = ParseState::PARSE_REQ_LINE;
