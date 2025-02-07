@@ -32,8 +32,11 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     , srv_sock_(-1)
     , workerpool_(chaos::ThreadPool(srv_conf_.nthread_))
     , events_(new struct epoll_event[srv_conf_.epoll_max_events_])
-    , conns_(5000)  // 预分配大小，降低哈希开销，空间换时间
+    , conns_(10000)  // 预分配大小，降低哈希开销，空间换时间
 {
+    // 预分配一定的空间，避免频繁扩容
+    expired_.reserve(1000);
+
     init_log();
 
     // 当服务端在send等操作时，客户端突然断开连接，
@@ -80,12 +83,12 @@ void LiteWebServer::start_loop()
     int n_event = 0;
 
     while(running_) {
-        n_event = epoll_wait(epoll_fd_, events_, srv_conf_.epoll_max_events_, -1);
+        n_event = epoll_wait(epoll_fd_, events_, srv_conf_.epoll_max_events_, DEF_TIMEOUT_S);
 
         // 如果等待事件失败，且不是因为系统中断造成的，
         // 直接退出主循环
         if (n_event < 0 && errno != EINTR) {
-            // SPDLOG_INFO("epoll_wait error: {}", strerror(errno));
+            // SPDLOG_ERROR("epoll_wait error: {}", strerror(errno));
             break;
         }
 
@@ -98,13 +101,23 @@ void LiteWebServer::start_loop()
             // 处理新的连接
             if (sockfd == srv_sock_) {
                 deal_new_conn();
-            } else if (events_[i].events & (EPOLLRDHUP| EPOLLHUP | EPOLLERR)) {
+            } else if (events_[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
+                // SPDLOG_DEBUG("{} Recv EPOLLRDHUP | EPOLLHUP | EPOLLERR", sockfd);
                 disconn_one(events_[i].data.fd);
             } else if (events_[i].events & EPOLLIN) {
                 deal_conn_in(sockfd);
             } else if (events_[i].events & EPOLLOUT) {
                 deal_conn_out(sockfd);
             }
+        }
+        
+        //TODO
+        // 将this 传给timer_mgr_，在超时时就处理链接，
+        // 省去一次循环，看看性能能提升多少，不过耦合性会提升
+        expired_.clear();
+        timer_mgr_.handle_expired_timers(expired_);
+        for (auto &id : expired_) {
+            deal_conn_expired(id);
         }
     }
 }
@@ -195,33 +208,24 @@ void LiteWebServer::deal_new_conn()
     if (cli_sock < 0) {
         return;
     }
-
-    {
-        std::lock_guard<std::mutex> lock(conns_mtx_);
-        conns_.emplace(cli_sock, std::make_shared<UserConn>(this, &srv_conf_, cli_sock));
-    }
+    conns_.emplace(cli_sock, std::make_shared<UserConn>(this, &srv_conf_, cli_sock));
 
     FdUtil::set_nonblocking(cli_sock);
-    // 通过设置EPOLLONESHOT保证，每个UserConn同一时间在线程池中只有一个任务
+    // FdUtil::set_socket_nodelay(cli_sock);
+    // 通过设置EPOLLONESHOT保证: 每个UserConn同一时间在线程池中只有一个任务
     // 避免了潜在的竟态问题，降低复杂性
     // 不清楚有没有不用EPOLLONESHOT的设计方案
     FdUtil::epoll_add_fd_oneshot(epoll_fd_, cli_sock, EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR);
     // SPDLOG_DEBUG("Recive client connect, cli_sock: {}, ip: {}",
     //              cli_sock, inet_ntoa(cli_addr.sin_addr));
+
+    timer_mgr_.add_timer(cli_sock);
 }
 
 void LiteWebServer::disconn_one(int cli_sock)
 {
-    {
-        std::lock_guard<std::mutex> lock(conns_mtx_);
-        auto one_user = conns_.find(cli_sock);
-        if (one_user == conns_.end()) {
-            return;
-        }
-
-        one_user->second->close_conn();
-        conns_.erase(cli_sock);
-    }
+    conns_.erase(cli_sock);
+    timer_mgr_.rm_timer(cli_sock);
     FdUtil::epoll_del_fd(epoll_fd_, cli_sock);
     close(cli_sock);
     // SPDLOG_DEBUG("Disconnect client, cli_sock: {}", cli_sock);
@@ -229,33 +233,42 @@ void LiteWebServer::disconn_one(int cli_sock)
 
 void LiteWebServer::deal_conn_in(int cli_sock)
 {
-    std::shared_ptr<UserConn> user_conn;
-    {
-        std::lock_guard<std::mutex> lock(conns_mtx_);
-        auto one_user = conns_.find(cli_sock);
-        if (one_user == conns_.end()) {
-            return;
-        }
-        user_conn = one_user->second;
+    auto one_user = conns_.find(cli_sock);
+    if (one_user == conns_.end()) {
+        return;
     }
-    
-    workerpool_.enqueue(UserConn::static_process_in, user_conn);
+    one_user->second->set_state(UserConn::ConnState::CONN_DEALING);
+    timer_mgr_.add_timer(cli_sock);
+    workerpool_.enqueue(UserConn::static_process_in, one_user->second);
     // SPDLOG_DEBUG("deal conn in, add to work queue, cli_sock: {}", cli_sock);
 }
 
 void LiteWebServer::deal_conn_out(int cli_sock)
 {
-    std::shared_ptr<UserConn> user_conn;
-    {
-        std::lock_guard<std::mutex> lock(conns_mtx_);
-        auto one_user = conns_.find(cli_sock);
-        if (one_user == conns_.end()) {
-            return;
-        }
-        user_conn = one_user->second;
+    auto one_user = conns_.find(cli_sock);
+    if (one_user == conns_.end()) {
+        return;
+    }
+    one_user->second->set_state(UserConn::ConnState::CONN_DEALING);
+    timer_mgr_.add_timer(cli_sock);
+    workerpool_.enqueue(UserConn::static_process_out, one_user->second);
+}
+
+void LiteWebServer::deal_conn_expired(int cli_sock)
+{
+    auto one_user = conns_.find(cli_sock);
+    if (one_user == conns_.end()) {
+        return;
     }
 
-    workerpool_.enqueue(UserConn::static_process_out, user_conn);
+    UserConn::ConnState state = one_user->second->get_state();
+    if (state == UserConn::ConnState::CONN_DEALING) {
+        // SPDLOG_DEBUG("Conn {} still dealing add timer", cli_sock);
+        timer_mgr_.add_timer(cli_sock);
+    } else {
+        // SPDLOG_DEBUG("Conn {} do disconnect", cli_sock);
+        disconn_one(cli_sock);
+    }
 }
 
 void LiteWebServer::modify_conn_event_read(int cli_sock)
@@ -266,4 +279,9 @@ void LiteWebServer::modify_conn_event_read(int cli_sock)
 void LiteWebServer::modify_conn_event_write(int cli_sock)
 {
     FdUtil::epoll_mod_fd_oneshot(epoll_fd_, cli_sock, EPOLLOUT | EPOLLRDHUP);
+}
+
+void LiteWebServer::modify_conn_event_close(int cli_sock)
+{
+    FdUtil::epoll_mod_fd_oneshot(epoll_fd_, cli_sock, EPOLLRDHUP);
 }

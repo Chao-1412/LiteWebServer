@@ -8,6 +8,7 @@
 #include "spdlog/spdlog.h"
 
 #include "litewebserver.h"
+#include "timer.h"
 #include "debughelper.h"
 
 
@@ -51,22 +52,25 @@ void UserConn::process_in()
     if (ret != true) {
         // SPDLOG_DEBUG("recv failed, regist read event, cli_sock: {}", cli_sock_);
         srv_inst_->modify_conn_event_read(cli_sock_);
-        return;
+        goto EXIT;
     }
-    // SPDLOG_DEBUG("recv from client, cli_sock: {}, data: {}", cli_sock_, buffer_r_);
+    // SPDLOG_DEBUG("recv from client, cli_sock: {}, data: {}", cli_sock_, buffer_data_to_str(buffer_r_, buffer_r_bytes_));
 
     // 解析收到的数据
     req_parsed_bytes_ += req_.parse(buffer_r_, req_parsed_bytes_);
     if (!req_.parse_complete()) {
         // SPDLOG_DEBUG("parse failed, regist read event, cli_sock: {}", cli_sock_);
         srv_inst_->modify_conn_event_read(cli_sock_);
-        return;
+        goto EXIT;
     }
 
     // 返回数据生成后注册epoll写事件，待可写事件触发后
     // 会调用UserConn::process_out，进行处理
     srv_inst_->modify_conn_event_write(cli_sock_);
     // SPDLOG_DEBUG("parse successed, regist write event, cli_sock: {}", cli_sock_);
+
+EXIT:
+    set_state(ConnState::CONN_CONNECTED);
 }
 
 void UserConn::process_out()
@@ -93,16 +97,25 @@ void UserConn::process_out()
         srv_inst_->modify_conn_event_write(cli_sock_);
     } else {
         std::string conn_state;
-        rsp_.get_header("Connection", conn_state);
+        req_.get_header("Connection", conn_state);
         if (conn_state == "close") {
-            srv_inst_->disconn_one(cli_sock_);
-            // SPDLOG_INFO("Client want to close connection");
+            // SPDLOG_DEBUG("Client {} want to close connection", cli_sock_);
+            // 这里将计时器更新为当前时间让其立马过期，
+            // 并让主线程在下次处理过期的定时器时关闭该链接
+            // 不过目前定时器是根据epoll_wait的返回来调度的
+            // 最后的一个链接可能不会马上被关闭，而是等到epoll_wait超时才会被关闭
+            srv_inst_->timer_mgr_.update_timer(cli_sock_, SteadyClock::now());
+            srv_inst_->modify_conn_event_close(cli_sock_);
         } else {
             // 如果不是直接断开链接，则重置连接状态
+            // SPDLOG_DEBUG("Client {} want to keep alive", cli_sock_);
             conn_state_reset();
             srv_inst_->modify_conn_event_read(cli_sock_);
         }
     }
+
+// EXIT:
+    set_state(ConnState::CONN_CONNECTED);
 }
 
 //BUG 需要考虑数据很大，撑爆缓冲区满的情况
@@ -112,14 +125,7 @@ bool UserConn::recv_from_cli()
     size_t remain_size = buffer_r_.size() - buffer_r_bytes_;
     char *read_begin = &(*buffer_r_.begin()) + buffer_r_bytes_;
 
-    ssize_t recv_bytes = 0;
-    {
-        std::lock_guard<std::mutex> lock(mtx_);
-        if (closed_) {
-            return false;
-        }
-        recv_bytes = recv(cli_sock_, read_begin, remain_size, 0);
-    }
+    ssize_t recv_bytes = recv(cli_sock_, read_begin, remain_size, 0);
 
     if (recv_bytes <= 0) {
         // 不管是 == 0：客户端关闭连接
@@ -181,8 +187,7 @@ void UserConn::send_base_rsp()
 {
     ssize_t send_bytes = 0;
 
-    std::lock_guard<std::mutex> lock(mtx_);
-    while (!closed_) {
+    while (true) {
         size_t remain_size = rsp_.get_base_rsp().size() - rsp_base_snd_bytes_;
         const char *snd_beg = rsp_.get_base_rsp().data() + rsp_base_snd_bytes_;
 
@@ -206,8 +211,7 @@ void UserConn::send_body()
 {
     ssize_t send_bytes = 0;
 
-    std::lock_guard<std::mutex> lock(mtx_);
-    while (!closed_) {
+    while (true) {
         if (rsp_.body_is_file()) {
             send_bytes = file_size_ - rsp_body_snd_bytes_;
             if (send_bytes <= 0) {

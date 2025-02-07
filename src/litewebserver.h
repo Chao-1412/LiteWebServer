@@ -4,13 +4,16 @@
 #include <string>
 #include <unordered_map>
 #include <memory>
-#include <mutex>
+#include <chrono>
 
 #include <sys/epoll.h>
 
 #include "serverconf.h"
 #include "ChaosThreadPool.h"
+#include "timer.h"
 #include "userconn.h"
+
+constexpr const int DEF_TIMEOUT_S = 10 * 1000;
 
 
 class LiteWebServer
@@ -43,18 +46,21 @@ private:
     void disconn_one(int cli_sock);
     void deal_conn_in(int cli_sock);
     void deal_conn_out(int cli_sock);
+    void deal_conn_expired(int cli_sock);
     void modify_conn_event_read(int cli_sock);
     void modify_conn_event_write(int cli_sock);
+    void modify_conn_event_close(int cli_sock);
 
 private:
     const ServerConf srv_conf_;
+    TimerManager timer_mgr_;
+    std::vector<int> expired_;
     bool running_;
     int epoll_fd_;
     int srv_sock_;
     chaos::ThreadPool workerpool_;
     struct epoll_event *events_;
     std::unordered_map<int, std::shared_ptr<UserConn> > conns_;
-    std::mutex conns_mtx_;
 };
 
 #endif //SRC_LITEWEBSERVER_H_
