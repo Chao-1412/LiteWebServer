@@ -20,6 +20,7 @@ class LiteWebServer
 {
     friend class UserConn;
 private:
+    static int exit_event;
     static void handle_signal(int sig);
 
 public:
@@ -40,7 +41,10 @@ public:
 private:
     void init_log();
     void create_listen_serve();
-    void register_signal();
+    /**
+     * @brief 处理退出信号
+     */
+    void register_exit_signal();
     void ignore_SIGPIPE();
     void deal_new_conn();
     void disconn_one(int cli_sock);

@@ -12,16 +12,21 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <unistd.h>
+#include <sys/eventfd.h>
 
 #include "spdlog/spdlog.h"
 
 #include "fdutil.h"
 #include "debughelper.h"
 
-
+int LiteWebServer::exit_event = eventfd(0, 0);
 void LiteWebServer::handle_signal(int sig)
 {
     if (sig == SIGTERM || sig == SIGINT) {
+        uint64_t event_count = 1;
+        // 不管返回值，失败就是失败算了，
+        // 如果失败了，就是无法按正常流程退出
+        write(LiteWebServer::exit_event, &event_count, sizeof(event_count));
     }
 }
 
@@ -43,9 +48,10 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     // 会触发SIGPIPE信号，导致进程退出
     // 这里忽略SIGPIPE信号，避免进程退出
     ignore_SIGPIPE();
+    register_exit_signal();
+    FdUtil::set_nonblocking(exit_event);
 
     create_listen_serve();
-
     FdUtil::set_nonblocking(srv_sock_);
 
     epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
@@ -54,6 +60,7 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     }
 
     FdUtil::epoll_add_fd(epoll_fd_, srv_sock_, EPOLLIN | EPOLLRDHUP);
+    FdUtil::epoll_add_fd(epoll_fd_, exit_event, EPOLLIN);
 }
 
 LiteWebServer::~LiteWebServer()
@@ -97,6 +104,12 @@ void LiteWebServer::start_loop()
             // unsigned int events_n = events_[i].events;
             // std::string events_s = events_to_str(events_[i].events);
             // SPDLOG_DEBUG("epoll event: sockfd: {}, events_n: {}, events_s: {}", sockfd,  events_n, events_s); 
+
+            if (sockfd == exit_event) {
+                // SPDLOG_DEBUG("Recive exit signal");
+                running_ = false;
+                break;
+            }
 
             // 处理新的连接
             if (sockfd == srv_sock_) {
@@ -163,9 +176,13 @@ void LiteWebServer::create_listen_serve()
     }
 }
 
-void LiteWebServer::register_signal()
+void LiteWebServer::register_exit_signal()
 {
     int ret = -1;
+
+    if (exit_event == -1) {
+        throw std::runtime_error(strerror(errno));
+    }
 
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
