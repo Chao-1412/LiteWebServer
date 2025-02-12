@@ -20,7 +20,7 @@ class LiteWebServer
 {
     friend class UserConn;
 private:
-    static int exit_event;
+    static int exit_event_;
     static void handle_signal(int sig);
 
 public:

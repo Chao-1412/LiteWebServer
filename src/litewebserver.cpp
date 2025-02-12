@@ -19,14 +19,14 @@
 #include "fdutil.h"
 #include "debughelper.h"
 
-int LiteWebServer::exit_event = eventfd(0, 0);
+int LiteWebServer::exit_event_ = -1;
 void LiteWebServer::handle_signal(int sig)
 {
     if (sig == SIGTERM || sig == SIGINT) {
         uint64_t event_count = 1;
         // 不管返回值，失败就是失败算了，
         // 如果失败了，就是无法按正常流程退出
-        write(LiteWebServer::exit_event, &event_count, sizeof(event_count));
+        write(LiteWebServer::exit_event_, &event_count, sizeof(event_count));
     }
 }
 
@@ -49,7 +49,7 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     // 这里忽略SIGPIPE信号，避免进程退出
     ignore_SIGPIPE();
     register_exit_signal();
-    FdUtil::set_nonblocking(exit_event);
+    FdUtil::set_nonblocking(exit_event_);
 
     create_listen_serve();
     FdUtil::set_nonblocking(srv_sock_);
@@ -60,7 +60,7 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     }
 
     FdUtil::epoll_add_fd(epoll_fd_, srv_sock_, EPOLLIN | EPOLLRDHUP);
-    FdUtil::epoll_add_fd(epoll_fd_, exit_event, EPOLLIN);
+    FdUtil::epoll_add_fd_oneshot(epoll_fd_, exit_event_, EPOLLIN);
 }
 
 LiteWebServer::~LiteWebServer()
@@ -71,6 +71,10 @@ LiteWebServer::~LiteWebServer()
 
     if (srv_sock_ >= 0) {
         close(srv_sock_);
+    }
+
+    if (exit_event_ >= 0) {
+        close(exit_event_);
     }
 
     if (events_) {
@@ -105,18 +109,16 @@ void LiteWebServer::start_loop()
             // std::string events_s = events_to_str(events_[i].events);
             // SPDLOG_DEBUG("epoll event: sockfd: {}, events_n: {}, events_s: {}", sockfd,  events_n, events_s); 
 
-            if (sockfd == exit_event) {
-                // SPDLOG_DEBUG("Recive exit signal");
-                running_ = false;
-                break;
-            }
-
             // 处理新的连接
             if (sockfd == srv_sock_) {
                 deal_new_conn();
             } else if (events_[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
                 // SPDLOG_DEBUG("{} Recv EPOLLRDHUP | EPOLLHUP | EPOLLERR", sockfd);
                 disconn_one(events_[i].data.fd);
+            } else if (sockfd == exit_event_) {
+                // SPDLOG_DEBUG("Recive exit signal");
+                running_ = false;
+                break;
             } else if (events_[i].events & EPOLLIN) {
                 deal_conn_in(sockfd);
             } else if (events_[i].events & EPOLLOUT) {
@@ -180,7 +182,8 @@ void LiteWebServer::register_exit_signal()
 {
     int ret = -1;
 
-    if (exit_event == -1) {
+    exit_event_ = eventfd(0, 0);
+    if (exit_event_ == -1) {
         throw std::runtime_error(strerror(errno));
     }
 
