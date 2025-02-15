@@ -5,7 +5,6 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <atomic>
 
 #include <stdlib.h>
@@ -18,7 +17,7 @@
 
 #define HTTP_FILE_CHUNK_SIZE 64 * 1024
 
-class LiteWebServer;
+class ConnLoop;
 
 
 class UserConn {
@@ -26,8 +25,6 @@ public:
     using HandleFunc = HttpResponse(*)(const HttpRequest&);
     static void register_err_handler(const HttpCode &code, HandleFunc func);
     static void register_router(const std::string &path, HttpMethod method, HandleFunc func);
-    static void static_process_in(std::shared_ptr<UserConn> conn);
-    static void static_process_out(std::shared_ptr<UserConn> conn);
 
 public:
     enum ConnState {
@@ -36,11 +33,11 @@ public:
     };
 
 public:
-    UserConn(LiteWebServer *const srv_inst,
+    UserConn(ConnLoop *const connloop,
              const ServerConf *const conf,
              int cli_sock)
         : state_(ConnState::CONN_CONNECTED)
-        , srv_inst_(srv_inst)
+        , connloop_(connloop)
         , conf_(conf)
         , cli_sock_(cli_sock)
         , buffer_r_(conf_->buffer_size_r_, '\0')
@@ -104,7 +101,7 @@ private:
 
 private:
     std::atomic<ConnState> state_;
-    LiteWebServer *const srv_inst_;
+    ConnLoop *const connloop_;
     const ServerConf *const conf_;
     int cli_sock_;
     std::string buffer_r_;
@@ -112,7 +109,6 @@ private:
     HttpRequest req_;
     uint32_t req_parsed_bytes_;
     HttpResponse rsp_;
-    std::mutex  mtx_;
     bool base_rsp_snd_;
     bool body_snd_;
     uint32_t rsp_base_snd_bytes_;

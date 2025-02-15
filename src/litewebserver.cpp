@@ -35,13 +35,10 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     , running_(false)
     , epoll_fd_(-1)
     , srv_sock_(-1)
-    , workerpool_(chaos::ThreadPool(srv_conf_.nthread_))
+    , eventpool_(chaos::ThreadPool(srv_conf_.nthread_))
     , events_(new struct epoll_event[srv_conf_.epoll_max_events_])
-    , conns_(10000)  // 预分配大小，降低哈希开销，空间换时间
+    , pool_idx_(0)
 {
-    // 预分配一定的空间，避免频繁扩容
-    expired_.reserve(1000);
-
     init_log();
 
     // 当服务端在send等操作时，客户端突然断开连接，
@@ -51,7 +48,7 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     register_exit_signal();
     FdUtil::set_nonblocking(exit_event_);
 
-    create_listen_serve();
+    create_listen_service();
     FdUtil::set_nonblocking(srv_sock_);
 
     epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
@@ -60,7 +57,13 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     }
 
     FdUtil::epoll_add_fd(epoll_fd_, srv_sock_, EPOLLIN | EPOLLRDHUP);
-    FdUtil::epoll_add_fd_oneshot(epoll_fd_, exit_event_, EPOLLIN);
+    FdUtil::epoll_add_fd_oneshot(epoll_fd_, exit_event_, EPOLLIN | EPOLLRDHUP);
+
+    //BUG 如何优雅的结束程序？如何关闭sock？如何释放资源？
+    for (int i = 0; i < srv_conf_.nthread_; ++i) {
+        conn_loops_.emplace_back(std::make_shared<ConnLoop>(&srv_conf_));
+        eventpool_.enqueue(&ConnLoop::loop, conn_loops_[i]);
+    }
 }
 
 LiteWebServer::~LiteWebServer()
@@ -82,11 +85,6 @@ LiteWebServer::~LiteWebServer()
     }
 }
 
-bool LiteWebServer::is_running()
-{
-    return running_;
-}
-
 void LiteWebServer::start_loop()
 {
     // SPDLOG_DEBUG("Start server loop...");
@@ -100,6 +98,7 @@ void LiteWebServer::start_loop()
         // 直接退出主循环
         if (n_event < 0 && errno != EINTR) {
             // SPDLOG_ERROR("epoll_wait error: {}", strerror(errno));
+            running_ = false;
             break;
         }
 
@@ -112,28 +111,19 @@ void LiteWebServer::start_loop()
             // 处理新的连接
             if (sockfd == srv_sock_) {
                 deal_new_conn();
-            } else if (events_[i].events & (EPOLLRDHUP | EPOLLHUP | EPOLLERR)) {
-                // SPDLOG_DEBUG("{} Recv EPOLLRDHUP | EPOLLHUP | EPOLLERR", sockfd);
-                disconn_one(events_[i].data.fd);
             } else if (sockfd == exit_event_) {
                 // SPDLOG_DEBUG("Recive exit signal");
                 running_ = false;
                 break;
-            } else if (events_[i].events & EPOLLIN) {
-                deal_conn_in(sockfd);
-            } else if (events_[i].events & EPOLLOUT) {
-                deal_conn_out(sockfd);
             }
         }
-        
-        //TODO
-        // 将this 传给timer_mgr_，在超时时就处理链接，
-        // 省去一次循环，看看性能能提升多少，不过耦合性会提升
-        expired_.clear();
-        timer_mgr_.handle_expired_timers(expired_);
-        for (auto &id : expired_) {
-            deal_conn_expired(id);
-        }
+    }
+
+    // 停掉所有事件循环
+    // 这里只要简单的调用stop就行，
+    // eventpool_线程池在销毁时会等待所有线程退出
+    for (int i = 0; i < srv_conf_.nthread_; ++i) {
+        conn_loops_[i]->stop();
     }
 }
 
@@ -150,7 +140,7 @@ void LiteWebServer::init_log()
     }
 }
 
-void LiteWebServer::create_listen_serve()
+void LiteWebServer::create_listen_service()
 {
     int sock_ret = -1;
 
@@ -228,80 +218,14 @@ void LiteWebServer::deal_new_conn()
     if (cli_sock < 0) {
         return;
     }
-    conns_.emplace(cli_sock, std::make_shared<UserConn>(this, &srv_conf_, cli_sock));
-
     FdUtil::set_nonblocking(cli_sock);
     // FdUtil::set_socket_nodelay(cli_sock);
-    // 通过设置EPOLLONESHOT保证: 每个UserConn同一时间在线程池中只有一个任务
-    // 避免了潜在的竟态问题，降低复杂性
-    // 不清楚有没有不用EPOLLONESHOT的设计方案
-    FdUtil::epoll_add_fd_oneshot(epoll_fd_, cli_sock, EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLERR);
+    //BUG 优化分配方式
+    // 简单的分配接收到的链接，这种方式有一个缺陷，
+    // 如果连接存在部分长连接，部分短连接，会导致分配不均
+    conn_loops_[pool_idx_]->add_conn_event_read(cli_sock);
+    pool_idx_ = (pool_idx_ + 1) % srv_conf_.nthread_;
+
     // SPDLOG_DEBUG("Recive client connect, cli_sock: {}, ip: {}",
     //              cli_sock, inet_ntoa(cli_addr.sin_addr));
-
-    timer_mgr_.add_timer(cli_sock);
-}
-
-void LiteWebServer::disconn_one(int cli_sock)
-{
-    conns_.erase(cli_sock);
-    timer_mgr_.rm_timer(cli_sock);
-    FdUtil::epoll_del_fd(epoll_fd_, cli_sock);
-    close(cli_sock);
-    // SPDLOG_DEBUG("Disconnect client, cli_sock: {}", cli_sock);
-}
-
-void LiteWebServer::deal_conn_in(int cli_sock)
-{
-    auto one_user = conns_.find(cli_sock);
-    if (one_user == conns_.end()) {
-        return;
-    }
-    one_user->second->set_state(UserConn::ConnState::CONN_DEALING);
-    timer_mgr_.add_timer(cli_sock);
-    workerpool_.enqueue(UserConn::static_process_in, one_user->second);
-    // SPDLOG_DEBUG("deal conn in, add to work queue, cli_sock: {}", cli_sock);
-}
-
-void LiteWebServer::deal_conn_out(int cli_sock)
-{
-    auto one_user = conns_.find(cli_sock);
-    if (one_user == conns_.end()) {
-        return;
-    }
-    one_user->second->set_state(UserConn::ConnState::CONN_DEALING);
-    timer_mgr_.add_timer(cli_sock);
-    workerpool_.enqueue(UserConn::static_process_out, one_user->second);
-}
-
-void LiteWebServer::deal_conn_expired(int cli_sock)
-{
-    auto one_user = conns_.find(cli_sock);
-    if (one_user == conns_.end()) {
-        return;
-    }
-
-    UserConn::ConnState state = one_user->second->get_state();
-    if (state == UserConn::ConnState::CONN_DEALING) {
-        // SPDLOG_DEBUG("Conn {} still dealing add timer", cli_sock);
-        timer_mgr_.add_timer(cli_sock);
-    } else {
-        // SPDLOG_DEBUG("Conn {} do disconnect", cli_sock);
-        disconn_one(cli_sock);
-    }
-}
-
-void LiteWebServer::modify_conn_event_read(int cli_sock)
-{
-    FdUtil::epoll_mod_fd_oneshot(epoll_fd_, cli_sock, EPOLLIN | EPOLLRDHUP);
-}
-
-void LiteWebServer::modify_conn_event_write(int cli_sock)
-{
-    FdUtil::epoll_mod_fd_oneshot(epoll_fd_, cli_sock, EPOLLOUT | EPOLLRDHUP);
-}
-
-void LiteWebServer::modify_conn_event_close(int cli_sock)
-{
-    FdUtil::epoll_mod_fd_oneshot(epoll_fd_, cli_sock, EPOLLRDHUP);
 }

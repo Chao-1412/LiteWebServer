@@ -30,16 +30,6 @@ void UserConn::register_router(const std::string &path, HttpMethod method, Handl
     router_[path][method] = func;
 }
 
-void UserConn::static_process_in(std::shared_ptr<UserConn> conn)
-{
-    conn->process_in();
-}
-
-void UserConn::static_process_out(std::shared_ptr<UserConn> conn)
-{
-    conn->process_out();
-}
-
 UserConn::~UserConn()
 {
     close_file_fd();
@@ -51,7 +41,7 @@ void UserConn::process_in()
     bool ret = recv_from_cli();
     if (ret != true) {
         // SPDLOG_DEBUG("recv failed, regist read event, cli_sock: {}", cli_sock_);
-        srv_inst_->modify_conn_event_read(cli_sock_);
+        connloop_->mod_conn_event_read(cli_sock_);
         goto EXIT;
     }
     // SPDLOG_DEBUG("recv from client, cli_sock: {}, data: {}", cli_sock_, buffer_data_to_str(buffer_r_, buffer_r_bytes_));
@@ -60,13 +50,13 @@ void UserConn::process_in()
     req_parsed_bytes_ += req_.parse(buffer_r_, req_parsed_bytes_);
     if (!req_.parse_complete()) {
         // SPDLOG_DEBUG("parse failed, regist read event, cli_sock: {}", cli_sock_);
-        srv_inst_->modify_conn_event_read(cli_sock_);
+        connloop_->mod_conn_event_read(cli_sock_);
         goto EXIT;
     }
 
     // 返回数据生成后注册epoll写事件，待可写事件触发后
     // 会调用UserConn::process_out，进行处理
-    srv_inst_->modify_conn_event_write(cli_sock_);
+    connloop_->mod_conn_event_write(cli_sock_);
     // SPDLOG_DEBUG("parse successed, regist write event, cli_sock: {}", cli_sock_);
 
 EXIT:
@@ -94,23 +84,18 @@ void UserConn::process_out()
     }
 
     if (!send_to_cli()) {
-        srv_inst_->modify_conn_event_write(cli_sock_);
+        connloop_->mod_conn_event_write(cli_sock_);
     } else {
         std::string conn_state;
         req_.get_header("Connection", conn_state);
         if (conn_state == "close") {
             // SPDLOG_DEBUG("Client {} want to close connection", cli_sock_);
-            // 这里将计时器更新为当前时间让其立马过期，
-            // 并让主线程在下次处理过期的定时器时关闭该链接
-            // 不过目前定时器是根据epoll_wait的返回来调度的
-            // 最后的一个链接可能不会马上被关闭，而是等到epoll_wait超时才会被关闭
-            srv_inst_->timer_mgr_.update_timer(cli_sock_, SteadyClock::now());
-            srv_inst_->modify_conn_event_close(cli_sock_);
+            connloop_->conn_close(cli_sock_);
         } else {
             // 如果不是直接断开链接，则重置连接状态
             // SPDLOG_DEBUG("Client {} want to keep alive", cli_sock_);
             conn_state_reset();
-            srv_inst_->modify_conn_event_read(cli_sock_);
+            connloop_->mod_conn_event_read(cli_sock_);
         }
     }
 

@@ -17,6 +17,7 @@ set(SRC_FILE
     src/litewebserver.cpp
     src/userconn.cpp
     src/httpdata.cpp
+    src/connloop.cpp
 )
 
 add_executable(${TARGET} ${SRC_FILE})

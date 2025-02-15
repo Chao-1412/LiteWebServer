@@ -8,6 +8,7 @@
 
 #include <sys/epoll.h>
 
+#include "connloop.h"
 #include "serverconf.h"
 #include "ChaosThreadPool.h"
 #include "timer.h"
@@ -18,7 +19,6 @@ constexpr const int DEF_TIMEOUT_S = 10 * 1000;
 
 class LiteWebServer
 {
-    friend class UserConn;
 private:
     static int exit_event_;
     static void handle_signal(int sig);
@@ -35,36 +35,28 @@ public:
     LiteWebServer& operator=(LiteWebServer&&) = delete;
     ~LiteWebServer();
 
-    bool is_running();
+public:
     void start_loop();
 
 private:
     void init_log();
-    void create_listen_serve();
+    void create_listen_service();
     /**
      * @brief 处理退出信号
      */
     void register_exit_signal();
     void ignore_SIGPIPE();
     void deal_new_conn();
-    void disconn_one(int cli_sock);
-    void deal_conn_in(int cli_sock);
-    void deal_conn_out(int cli_sock);
-    void deal_conn_expired(int cli_sock);
-    void modify_conn_event_read(int cli_sock);
-    void modify_conn_event_write(int cli_sock);
-    void modify_conn_event_close(int cli_sock);
 
 private:
     const ServerConf srv_conf_;
-    TimerManager timer_mgr_;
-    std::vector<int> expired_;
     bool running_;
     int epoll_fd_;
     int srv_sock_;
-    chaos::ThreadPool workerpool_;
+    chaos::ThreadPool eventpool_;
     struct epoll_event *events_;
-    std::unordered_map<int, std::shared_ptr<UserConn> > conns_;
+    std::vector<std::shared_ptr<ConnLoop> > conn_loops_;
+    uint8_t pool_idx_;
 };
 
 #endif //SRC_LITEWEBSERVER_H_
