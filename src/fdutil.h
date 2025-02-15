@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <sys/epoll.h>
 #include <netinet/tcp.h> 
+#include <netinet/ip.h>
 
 
 class FdUtil
