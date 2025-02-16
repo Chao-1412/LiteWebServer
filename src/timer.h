@@ -6,11 +6,10 @@
 #include <queue>
 #include <deque>
 #include <unordered_map>
-#include <mutex>
 
 #include <stdint.h>
 
-#include "spdlog/spdlog.h"
+// #include "spdlog/spdlog.h"
 
 using SteadyClock = std::chrono::steady_clock;
 using MilliSeconds = std::chrono::milliseconds;
@@ -66,14 +65,12 @@ public:
                    SteadyClock::time_point expire_time =
                      (SteadyClock::now()+MilliSeconds(DEF_TIMER_EXPIRE_MS)))
     {
-        std::lock_guard<std::mutex> lock(mgr_mutex_);
         timer_queue_.emplace(id, expire_time);
         timer_map_[id] = expire_time;
     }
 
     void add_timer(const TimerNode &node)
     {
-        std::lock_guard<std::mutex> lock(mgr_mutex_);
         timer_queue_.emplace(node);
         timer_map_[node.id] = node.expire_;
     }
@@ -89,33 +86,29 @@ public:
 
     void rm_timer(int id)
     {
-        std::lock_guard<std::mutex> lock(mgr_mutex_);
         timer_map_.erase(id);
     }
 
     void handle_expired_timers(std::vector<int> &expired)
     {
         // SPDLOG_DEBUG("handle_expired_timers...");
-        {
-            auto now = SteadyClock::now();
-            std::lock_guard<std::mutex> lock(mgr_mutex_);
-            while (!timer_queue_.empty()) {
-                auto top = timer_queue_.top();
+        auto now = SteadyClock::now();
+        while (!timer_queue_.empty()) {
+            auto top = timer_queue_.top();
 
-                if (now < top.expire_) { break; }
+            if (now < top.expire_) { break; }
 
-                // 不管是否在timer_map_中存在，都弹出
-                timer_queue_.pop();
+            // 不管是否在timer_map_中存在，都弹出
+            timer_queue_.pop();
 
-                auto one_timer = timer_map_.find(top.id);
-                if (one_timer == timer_map_.end()
-                      || one_timer->second != top.expire_) {
-                    continue;
-                }
-
-                expired.push_back(top.id);
-                timer_map_.erase(top.id);
+            auto one_timer = timer_map_.find(top.id);
+            if (one_timer == timer_map_.end()
+                    || one_timer->second != top.expire_) {
+                continue;
             }
+
+            expired.push_back(top.id);
+            timer_map_.erase(top.id);
         }
     }
 
@@ -128,7 +121,6 @@ public:
      */
     TimerNode get_top()
     {
-        std::lock_guard<std::mutex> lock(mgr_mutex_);
         auto copy = timer_queue_;
         
         while (!copy.empty()) {
@@ -147,7 +139,6 @@ public:
  
     std::size_t queue_size()
     {
-        std::lock_guard<std::mutex> lock(mgr_mutex_);
         return timer_map_.size();
     }
 
@@ -156,7 +147,6 @@ private:
                         std::deque<TimerNode>,
                         std::greater<TimerNode> > timer_queue_;
     std::unordered_map<int, SteadyClock::time_point> timer_map_;
-    std::mutex mgr_mutex_;
 };
 
 #endif //SRC_EPOLLTIMER_H_
