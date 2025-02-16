@@ -52,6 +52,7 @@ inline int FdUtil::set_nonblocking(int fd)
 
 inline int FdUtil::epoll_add_fd(int epollfd, int fd, uint32_t events)
 {
+    //TODO 使用thread_local优化每次的变量创建
     struct epoll_event sock_event;
     sock_event.data.fd = fd;
     sock_event.events = events;
