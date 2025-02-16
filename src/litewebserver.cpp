@@ -14,10 +14,11 @@
 #include <unistd.h>
 #include <sys/eventfd.h>
 
-#include "spdlog/spdlog.h"
+// #include "spdlog/spdlog.h"
 
 #include "fdutil.h"
-#include "debughelper.h"
+// #include "debughelper.h"
+
 
 int LiteWebServer::exit_event_ = -1;
 void LiteWebServer::handle_signal(int sig)
@@ -129,15 +130,15 @@ void LiteWebServer::start_loop()
 
 void LiteWebServer::init_log()
 {
-    try {
-        // Auto flush when "trace" or higher message is logged on all loggers
-        spdlog::flush_on(spdlog::level::trace);
-        // Custom pattern
-        spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P|%t] [%l] %v");
-        spdlog::set_level(spdlog::level::debug);
-    } catch (const spdlog::spdlog_ex &ex) {
-        std::cout << "Log initialization failed: " << ex.what() << std::endl;
-    }
+    // try {
+    //     // Auto flush when "trace" or higher message is logged on all loggers
+    //     spdlog::flush_on(spdlog::level::trace);
+    //     // Custom pattern
+    //     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P|%t] [%l] %v");
+    //     spdlog::set_level(spdlog::level::debug);
+    // } catch (const spdlog::spdlog_ex &ex) {
+    //     std::cout << "Log initialization failed: " << ex.what() << std::endl;
+    // }
 }
 
 void LiteWebServer::create_listen_service()
@@ -223,7 +224,7 @@ void LiteWebServer::deal_new_conn()
     //BUG 优化分配方式
     // 简单的分配接收到的链接，这种方式有一个缺陷，
     // 如果连接存在部分长连接，部分短连接，会导致分配不均
-    conn_loops_[pool_idx_]->add_conn_event_read(cli_sock);
+    conn_loops_[pool_idx_]->add_clisock_to_queue(cli_sock);
     pool_idx_ = (pool_idx_ + 1) % srv_conf_.nthread_;
 
     // SPDLOG_DEBUG("Recive client connect, cli_sock: {}, ip: {}",

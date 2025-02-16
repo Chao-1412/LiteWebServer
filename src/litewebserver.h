@@ -46,6 +46,7 @@ private:
      */
     void register_exit_signal();
     void ignore_SIGPIPE();
+    //TODO 使用ET模式看看性能有多少提升？
     void deal_new_conn();
 
 private:

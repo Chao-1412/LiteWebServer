@@ -2,14 +2,17 @@
 
 #include <string>
 
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/sendfile.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
-#include "spdlog/spdlog.h"
+// #include "spdlog/spdlog.h"
 
 #include "litewebserver.h"
 #include "timer.h"
-#include "debughelper.h"
+// #include "debughelper.h"
 
 
 std::map<HttpCode, UserConn::HandleFunc> UserConn::err_handler_ = {
@@ -74,7 +77,7 @@ void UserConn::process_out()
         file_fd_ = open(file_path.c_str(), O_RDONLY);
         if (file_fd_ < 0) {
             rsp_ = err_handler_[HttpCode::INTERNAL_SERVER_ERROR](req_);
-            // SPDLOG_INFO("open file failed, code: {}, msg: {}", errno, strerror(errno));
+            // SPDLOG_ERROR("open file failed, code: {}, msg: {}", errno, strerror(errno));
         }
         struct stat file_stat;
         fstat(file_fd_, &file_stat);
