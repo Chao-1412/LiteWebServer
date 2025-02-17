@@ -15,6 +15,8 @@
 #include <sys/eventfd.h>
 
 // #include "spdlog/spdlog.h"
+// #include "spdlog/sinks/basic_file_sink.h"
+// #include "spdlog/async.h"
 
 #include "fdutil.h"
 // #include "debughelper.h"
@@ -130,12 +132,43 @@ void LiteWebServer::start_loop()
 
 void LiteWebServer::init_log()
 {
+    // output to console
     // try {
     //     // Auto flush when "trace" or higher message is logged on all loggers
     //     spdlog::flush_on(spdlog::level::trace);
     //     // Custom pattern
     //     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P|%t] [%l] %v");
     //     spdlog::set_level(spdlog::level::debug);
+    // } catch (const spdlog::spdlog_ex &ex) {
+    //     std::cout << "Log initialization failed: " << ex.what() << std::endl;
+    // }
+
+    // output to file with no rotation and multithread
+    // #include "spdlog/sinks/basic_file_sink.h"
+    // try {
+    //     // Auto flush when "trace" or higher message is logged on all loggers
+    //     spdlog::flush_on(spdlog::level::debug);
+    //     // Custom pattern
+    //     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P|%t] [%l] %v");
+    //     spdlog::set_level(spdlog::level::debug);
+    //     spdlog::basic_logger_mt("server_log", "litewebserver.log");
+    //     spdlog::set_default_logger(spdlog::get("server_log"));
+    // } catch (const spdlog::spdlog_ex &ex) {
+    //     std::cout << "Log initialization failed: " << ex.what() << std::endl;
+    // }
+
+    // ASYNCHRONOUS
+    // output to file with no rotation and multithread
+    // #include "spdlog/sinks/basic_file_sink.h"
+    // #include "spdlog/async.h"
+    // try {
+    //     // Auto flush when "trace" or higher message is logged on all loggers
+    //     spdlog::flush_on(spdlog::level::debug);
+    //     // Custom pattern
+    //     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P|%t] [%l] %v");
+    //     spdlog::set_level(spdlog::level::debug);
+    //     spdlog::basic_logger_mt<spdlog::async_factory>("server_log", "litewebserver.log");
+    //     spdlog::set_default_logger(spdlog::get("server_log"));
     // } catch (const spdlog::spdlog_ex &ex) {
     //     std::cout << "Log initialization failed: " << ex.what() << std::endl;
     // }
