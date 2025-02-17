@@ -110,7 +110,7 @@ void LiteWebServer::start_loop()
 
             // 处理新的连接
             if (sockfd == srv_sock_) {
-                deal_new_conn();
+                deal_new_conn_greedy();
             } else if (sockfd == exit_event_) {
                 // SPDLOG_DEBUG("Recive exit signal");
                 break;
@@ -258,4 +258,31 @@ void LiteWebServer::deal_new_conn()
 
     // SPDLOG_DEBUG("Recive client connect, cli_sock: {}, ip: {}",
     //              cli_sock, inet_ntoa(cli_addr.sin_addr));
+}
+
+void LiteWebServer::deal_new_conn_greedy()
+{
+    struct sockaddr_in cli_addr;
+    socklen_t cli_addr_size = sizeof(cli_addr);
+    //TODO 仅初始化一次，应该是没问题的
+    memset(&cli_addr, 0, cli_addr_size);
+
+    while (true) {
+        int cli_sock = accept(srv_sock_, (struct sockaddr *)&cli_addr, &cli_addr_size);
+        if (cli_sock < 0) {
+            // 除了系统中断外，都应该直接退出，目前是这样的
+            if (errno == EINTR) { continue; }
+            else { break; }
+        }
+
+        FdUtil::set_nonblocking(cli_sock);
+        // FdUtil::set_socket_nodelay(cli_sock);
+        //BUG 优化分配方式
+        // 简单的分配接收到的链接，这种方式有一个缺陷，
+        // 如果连接存在部分长连接，部分短连接，会导致分配不均
+        conn_loops_[pool_idx_]->add_clisock_to_queue(cli_sock);
+        pool_idx_ = (pool_idx_ + 1) % srv_conf_.nthread_;
+        // SPDLOG_DEBUG("Recive client connect, cli_sock: {}, ip: {}",
+        //              cli_sock, inet_ntoa(cli_addr.sin_addr));
+    }
 }

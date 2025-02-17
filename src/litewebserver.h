@@ -13,6 +13,7 @@
 #include "ChaosThreadPool.h"
 #include "timer.h"
 #include "userconn.h"
+#include "cppver.h"
 
 
 class LiteWebServer
@@ -44,8 +45,16 @@ private:
      */
     void register_exit_signal();
     void ignore_SIGPIPE();
-    //TODO 使用ET模式看看性能有多少提升？
+    /**
+     * @brief 分配新连接给线程池中的一个线程处理
+     */
+    LWS_DEPRECATED
     void deal_new_conn();
+    /**
+     * @brief 分配新连接给线程池中的一个线程处理
+     *        贪心的，一次accept完多个链接
+     */
+    void deal_new_conn_greedy();
 
 private:
     const ServerConf srv_conf_;
