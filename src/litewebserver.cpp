@@ -95,7 +95,7 @@ void LiteWebServer::start_loop()
     int n_event = 0;
 
     while(running_) {
-        n_event = epoll_wait(epoll_fd_, events_, srv_conf_.epoll_max_events_, DEF_TIMEOUT_S);
+        n_event = epoll_wait(epoll_fd_, events_, srv_conf_.epoll_max_events_, -1);
 
         // 如果等待事件失败，且不是因为系统中断造成的，
         // 直接退出主循环

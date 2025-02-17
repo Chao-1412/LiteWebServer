@@ -14,8 +14,6 @@
 #include "timer.h"
 #include "userconn.h"
 
-constexpr const int DEF_TIMEOUT_S = 10 * 1000;
-
 
 class LiteWebServer
 {
