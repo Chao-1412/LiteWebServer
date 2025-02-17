@@ -10,6 +10,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+// #include "spdlog/spdlog.h"
+
 #include "fdutil.h"
 
 
@@ -59,6 +61,8 @@ void ConnLoop::loop()
 
     while (true) {
         n_event = epoll_wait(epfd_, events_, srv_conf_->epoll_max_events_, epoll_wait_timeout_);
+        // SPDLOG_DEBUG("epoll_wait return n_event: {}", n_event);
+        // SteadyClock::time_point start = SteadyClock::now();
 
         // 如果等待事件失败，且不是因为系统中断造成的，
         // 直接退出主循环
@@ -91,6 +95,9 @@ void ConnLoop::loop()
                 }
             }
         }
+
+        // auto elapse = std::chrono::duration_cast<std::chrono::seconds>(SteadyClock::now() - start);
+        // SPDLOG_DEBUG("epoll_wait elapse: {}s", elapse.count());
 
         //BUG 多个读写任务是在同一个线程里顺序执行的，
         // 如果前一个读写任务阻塞了很长时间，很容易导致任务还没处理就超时了
