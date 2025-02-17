@@ -7,6 +7,8 @@
 
 #include <errno.h>
 
+#include "cppver.h"
+
 
 class StringUtil
 {
@@ -52,7 +54,7 @@ public:
 
     // constexpr 默认是inline类型的语句
     // 不同的是如果使用外部定义，定义时也需要加上constexpr修饰符
-    static constexpr
+    static LWS_CONSTEXPR
     bool ch_str_is_equal(const char *str1, const char *str2);
 
     /**
@@ -119,7 +121,7 @@ bool StringUtil::str_get_key_val(
     }
 }
 
-constexpr bool StringUtil::ch_str_is_equal(const char *str1, const char *str2)
+LWS_CONSTEXPR bool StringUtil::ch_str_is_equal(const char *str1, const char *str2)
 {
     while (*str1 != '\0' && *str2 != '\0') {
         if (*str1 != *str2) {
