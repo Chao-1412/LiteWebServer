@@ -37,7 +37,7 @@ ConnLoop::ConnLoop(const ServerConf *const srv_conf, int epoll_wait_timeout)
     // 其实也可以是非阻塞，可以提高命令发送的效率，
     // 因为现在就只有两个命令，实际上命令丢几条影响不大
     // 不过如果丢失的是停止命令，可能导致线程停止较慢
-    //TODO 后续测试下使用非阻塞命令性能是否有提升
+    //TODO 后续测试下,发送也使用非阻塞命令性能是否有提升
     FdUtil::set_nonblocking(cmd_sockpair_[1]);
     //TODO 后续测试下使用LT模式性能是否有提升
     FdUtil::epoll_add_fd(epfd_, cmd_sockpair_[1], EPOLLIN | EPOLLRDHUP | EPOLLET);
