@@ -37,7 +37,7 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     : srv_conf_(srv_conf)
     , epoll_fd_(-1)
     , srv_sock_(-1)
-    , eventpool_(chaos::ThreadPool(srv_conf_.nthread_))
+    , eventpool_(srv_conf_.nthread_)
     , events_(new struct epoll_event[srv_conf_.epoll_max_events_])
     , pool_idx_(0)
 {
