@@ -59,7 +59,11 @@ LiteWebServer::LiteWebServer(const ServerConf srv_conf)
         throw std::runtime_error(strerror(errno));
     }
 
-    FdUtil::epoll_add_fd(epoll_fd_, srv_sock_, EPOLLIN | EPOLLRDHUP);
+    uint32_t srv_sock_events = EPOLLIN | EPOLLRDHUP;
+    if (srv_conf_.epoll_et_srv_) {
+        srv_sock_events |= EPOLLET;
+    }
+    FdUtil::epoll_add_fd(epoll_fd_, srv_sock_, srv_sock_events);
     FdUtil::epoll_add_fd_oneshot(epoll_fd_, exit_event_, EPOLLIN | EPOLLRDHUP);
 
     //BUG 如何优雅的结束程序？如何关闭sock？如何释放资源？
