@@ -20,7 +20,9 @@
 
    A2. 原先采用single-reactor的模式，将任务分发到不同线程时，需要加锁，导致CPU切换的开销很大，参考了其他人的实现，在multi-reactor的分支中，每个线程维护一个epoll，这样分配任务的时候不需要加锁，性能提高了将近一倍，详见分支：multi-reactor
 
-   A3. 在multi-reactor的分支下，还是需要加锁添加，原代码在添加时timermanager需要加锁，导致很多使用timermanager的地方都因为锁而影响了性能，后续实现了一个待添加的fd队列，并通过socketpair发送通知给eventloop线程，这样操作timermanager就变为单线程操作，只需要在添加fd队列时加锁，提高了20%性能，详见提交：f2ae2c19
+   A3. 在multi-reactor的分支下，原代码在添加新的连接时添加定时器timermanager需要加锁，导致很多使用timermanager的地方都因为锁而影响了性能，后续实现了一个待添加连接的队列，通过socketpair发送通知给eventloop线程，这样操作timermanager就变为单线程操作，只需要在将新连接加入待添加的连接队列时加锁，比A2版本提高了20%性能，详见提交：f2ae2c19
+
+   A4. acceptor接收新连接时，增加了一个贪心的接收方式，一次性读取所有新的连接，比A3版本性能提高了约10%，详见提交：66ae6176
 
 6. **如何实现类似flask的框架？如何将C++web程序挂到apache？**
 
