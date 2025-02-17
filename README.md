@@ -50,7 +50,7 @@ make
 
    ![LTLT](README.assets/LT+LT.png)
 
-   ET+ET：
+   ET+LT：
 
    ![ETLT](README.assets/ET+LT.png)
 
