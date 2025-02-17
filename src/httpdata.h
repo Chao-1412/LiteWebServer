@@ -9,8 +9,8 @@
 #include "stringutil.h"
 
 
-template <typename EnumType> constexpr const char* http_enum_to_str(EnumType e);
-template <typename EnumType> constexpr EnumType http_str_to_enum(const char* str);
+template <typename EnumType> LWS_CONSTEXPR const char* http_enum_to_str(EnumType e);
+template <typename EnumType> LWS_CONSTEXPR EnumType http_str_to_enum(const char* str);
 
 // new HttpMethod enum insert here
 #define HTTPMETHOD_ENUM \
@@ -77,7 +77,7 @@ enum class HttpContentType
 };
 
 template<>
-constexpr const char* http_enum_to_str<HttpMethod>(HttpMethod e)
+LWS_CONSTEXPR const char* http_enum_to_str<HttpMethod>(HttpMethod e)
 {
     switch (e) {
         #define X(NAME) case HttpMethod::NAME: return #NAME;
@@ -88,7 +88,7 @@ constexpr const char* http_enum_to_str<HttpMethod>(HttpMethod e)
 }
 
 template<>
-constexpr HttpMethod http_str_to_enum<HttpMethod>(const char* str)
+LWS_CONSTEXPR HttpMethod http_str_to_enum<HttpMethod>(const char* str)
 {
     #define X(NAME) if (StringUtil::ch_str_is_equal(str, #NAME)) return HttpMethod::NAME;
     HTTPMETHOD_ENUM
@@ -97,7 +97,7 @@ constexpr HttpMethod http_str_to_enum<HttpMethod>(const char* str)
 }
 
 template<>
-constexpr const char* http_enum_to_str<HttpCode>(HttpCode e)
+LWS_CONSTEXPR const char* http_enum_to_str<HttpCode>(HttpCode e)
 {
     switch (e) {
         #define X(NAME, CODE, DESC) case HttpCode::NAME: return DESC;
@@ -108,7 +108,7 @@ constexpr const char* http_enum_to_str<HttpCode>(HttpCode e)
 }
 
 template<>
-constexpr HttpCode http_str_to_enum<HttpCode>(const char* str)
+LWS_CONSTEXPR HttpCode http_str_to_enum<HttpCode>(const char* str)
 {
     #define X(NAME, CODE, DESC) if (StringUtil::ch_str_is_equal(str, DESC)) return HttpCode::NAME;
     HTTPCODE_ENUM
@@ -117,7 +117,7 @@ constexpr HttpCode http_str_to_enum<HttpCode>(const char* str)
 }
 
 template<>
-constexpr const char* http_enum_to_str<HttpVersion>(HttpVersion e)
+LWS_CONSTEXPR const char* http_enum_to_str<HttpVersion>(HttpVersion e)
 {
     switch (e) {
         #define X(NAME, DESC) case HttpVersion::NAME: return DESC;
@@ -128,7 +128,7 @@ constexpr const char* http_enum_to_str<HttpVersion>(HttpVersion e)
 }
 
 template<>
-constexpr HttpVersion http_str_to_enum<HttpVersion>(const char* str)
+LWS_CONSTEXPR HttpVersion http_str_to_enum<HttpVersion>(const char* str)
 {
     #define X(NAME, DESC) if (StringUtil::ch_str_is_equal(str, DESC)) return HttpVersion::NAME;
     HTTPVERSION_ENUM
@@ -137,7 +137,7 @@ constexpr HttpVersion http_str_to_enum<HttpVersion>(const char* str)
 }
 
 template<>
-constexpr const char* http_enum_to_str<HttpContentType>(HttpContentType e)
+LWS_CONSTEXPR const char* http_enum_to_str<HttpContentType>(HttpContentType e)
 {
     e = static_cast<HttpContentType>(
         static_cast<int>(e) & ~static_cast<int>(HttpContentType::FILE_TYPE)
@@ -152,7 +152,7 @@ constexpr const char* http_enum_to_str<HttpContentType>(HttpContentType e)
 }
 
 template<>
-constexpr HttpContentType http_str_to_enum<HttpContentType>(const char* str)
+LWS_CONSTEXPR HttpContentType http_str_to_enum<HttpContentType>(const char* str)
 {
     #define X(NAME, CODE, DESC) if (StringUtil::ch_str_is_equal(str, DESC)) return HttpContentType::NAME;
     HTTPCONTENTTYPE_ENUM
