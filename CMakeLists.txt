@@ -26,11 +26,12 @@ add_executable(${TARGET} ${SRC_FILE})
 # 添加编译选项
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(${TARGET} PRIVATE -std=c++14)
     # target_compile_options(${TARGET} PRIVATE -Wall -Wextra -Wpedantic -g -O0)
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     target_compile_options(${TARGET} PRIVATE /W4)
+    target_compile_options(${TARGET} PRIVATE /std:c++14)
 endif()
-
 
 # 测试
 if(ENABLE_UNITTEST)
