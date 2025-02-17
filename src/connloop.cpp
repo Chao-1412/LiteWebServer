@@ -17,7 +17,7 @@ ConnLoop::ConnLoop(const ServerConf *const srv_conf, int epoll_wait_timeout)
     : srv_conf_(srv_conf)
     , stop_(false)
     , epoll_wait_timeout_(epoll_wait_timeout)
-    , epfd_(epoll_create1(EPOLL_CLOEXEC))
+    , epfd_(-1)
     , events_(new struct epoll_event[srv_conf_->epoll_max_events_])
     , conns_(10000)
     , cmd_sockpair_{-1, -1}
@@ -27,6 +27,7 @@ ConnLoop::ConnLoop(const ServerConf *const srv_conf, int epoll_wait_timeout)
     new_cli_socks_.reserve(10000);
     new_cli_socks_swap_.reserve(10000);
 
+    epfd_ = epoll_create1(EPOLL_CLOEXEC);
     if (epfd_ == -1) { throw std::runtime_error(strerror(errno)); }
     
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, cmd_sockpair_) == -1) {
