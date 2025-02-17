@@ -35,6 +35,7 @@ void LiteWebServer::handle_signal(int sig)
 
 LiteWebServer::LiteWebServer(const ServerConf srv_conf)
     : srv_conf_(srv_conf)
+    , running_(false)
     , epoll_fd_(-1)
     , srv_sock_(-1)
     , eventpool_(srv_conf_.nthread_)
@@ -90,15 +91,17 @@ LiteWebServer::~LiteWebServer()
 void LiteWebServer::start_loop()
 {
     // SPDLOG_DEBUG("Start server loop...");
+    running_ = true;
     int n_event = 0;
 
-    while(true) {
+    while(running_) {
         n_event = epoll_wait(epoll_fd_, events_, srv_conf_.epoll_max_events_, -1);
 
         // 如果等待事件失败，且不是因为系统中断造成的，
         // 直接退出主循环
         if (n_event < 0 && errno != EINTR) {
             // SPDLOG_ERROR("epoll_wait error: {}", strerror(errno));
+            running_ = false;
             break;
         }
 
@@ -113,6 +116,7 @@ void LiteWebServer::start_loop()
                 deal_new_conn_greedy();
             } else if (sockfd == exit_event_) {
                 // SPDLOG_DEBUG("Recive exit signal");
+                running_ = false;
                 break;
             }
         }

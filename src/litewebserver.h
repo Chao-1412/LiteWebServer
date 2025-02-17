@@ -58,6 +58,7 @@ private:
 
 private:
     const ServerConf srv_conf_;
+    bool running_;
     int epoll_fd_;
     int srv_sock_;
     chaos::ThreadPool eventpool_;
