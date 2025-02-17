@@ -6,9 +6,9 @@
 
 ### 编译环境及说明
 
-C++版本：>=C++11(C++11和C++14测试通过)
+**C++版本：>=C++11(C++11和C++14测试通过)**
 
-在项目根目录下，
+在项目根目录下:
 ```bash
 mkdir build
 cd build
@@ -29,6 +29,30 @@ make
 服务程序，测试程序在同一台虚拟机
 
 1. WebBench测试
+   
+   4线程，10000客户端，测试60秒，简单页面测试：
+
+   ```C++
+   static const std::string index_body = "<!DOCTYPE html>\r\n"
+                                      "<html>\r\n"
+                                      "<head><title>Simple Web Server</title></head>\r\n"
+                                      "<body><h1>Hello, World! This is a simple web server.</h1></body>\r\n"
+                                      "</html>\r\n";
+   ```
+
+   ```bash
+   ./webbench -t 60 -c 10000 -2 --get http://127.0.0.1:8080/
+   ```
+
+   LT+LT模式，约 64416 QPS，ET(accept连接)+LT模式，约 68292 QPS，因为实现中LT和ET均采用了一次性accept的方式，所以实际上差的不是很大
+
+   LT+LT：
+
+   ![LTLT](README.assets/LT+LT.png)
+
+   ET+ET：
+
+   ![ETLT](README.assets/ET+LT.png)
 
 ### 使用方法
 
