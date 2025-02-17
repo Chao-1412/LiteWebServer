@@ -16,6 +16,10 @@ cmake ..
 make
 ```
 
+### 用法
+
+编译后build目录下执行：`./litewebserver`
+
 ### 测试环境及性能
 
 测试环境：
@@ -53,10 +57,6 @@ make
    ET+LT：
 
    ![ETLT](README.assets/ET+LT.png)
-
-### 使用方法
-
-编译后build目录下执行：`./litewebserver`
 
 ### 感谢
 
