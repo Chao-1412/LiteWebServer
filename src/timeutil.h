@@ -2,7 +2,6 @@
 #define SRC_EPOLLTIMER_H_
 
 #include <chrono>
-#include <atomic>
 #include <queue>
 #include <deque>
 #include <unordered_map>
