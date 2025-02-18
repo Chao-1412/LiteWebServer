@@ -186,10 +186,7 @@ void ConnLoop::cmd_recv()
         // 除了系统中断外，都应该直接退出，目前是这样的
         if (ret <= 0) {
             if (errno == EINTR) { continue; }
-            else {
-                SPDLOG_ERROR("cmd_recv read error: {}", strerror(errno));
-                break;
-            }
+            else { break; }
         }
 
         // 处理每一个命令

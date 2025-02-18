@@ -287,10 +287,7 @@ void LiteWebServer::deal_new_conn_greedy()
         if (cli_sock < 0) {
             // 除了系统中断外，都应该直接退出，目前是这样的
             if (errno == EINTR) { continue; }
-            else {
-                SPDLOG_ERROR("deal_new_conn_greedy accept error: {}", strerror(errno));
-                break;
-            }
+            else { break; }
         }
 
         FdUtil::set_nonblocking(cli_sock);
