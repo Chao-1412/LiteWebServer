@@ -56,6 +56,8 @@ void UserConn::process_in()
         goto EXIT;
     }
 
+    // SPDLOG_DEBUG("request current data: {}", req_.dump_data_str());
+
     // 返回数据生成后注册epoll写事件，待可写事件触发后
     // 会调用UserConn::process_out，进行处理
     connloop_->mod_conn_event_write(cli_sock_);
@@ -67,6 +69,8 @@ EXIT:
 void UserConn::process_out()
 {
     route_path();
+
+    // SPDLOG_DEBUG("response current data: {}", rsp_.dump_data_str());
 
     // 如果是文件类型，先打开文件
     // 打不开的话，返回500错误
