@@ -282,10 +282,10 @@ public:
      * @brief 设置响应体
      * @param data 响应体数据
      * @param type 响应体类型
-     * @param is_file 是否是文件，true表示是文件，false表示二进制string流
-     *                默认是文件类型，因为正常都是从文件读数据的！所以要用二进制流请手动设置
+     * @param charset 响应体编码，不传现在默认为UTF-8
      */
-    void set_body(const std::string &data, HttpContentType type, bool is_file = true);
+    void set_body_file(const std::string &path, HttpContentType type, const std::string &charset = "");
+    void set_body_bin(const std::string &data, HttpContentType type, const std::string &charset = "");
     HttpContentType get_body_type() const { return body_type_; }
     bool body_is_file() const { return body_is_file_; }
     const std::string& get_body() const { return body_; }
@@ -310,6 +310,9 @@ public:
 
 private:
     void make_base_rsp();
+    std::string def_charset(HttpContentType type);
+    void update_content_type(HttpContentType type, const std::string &charset);
+    void set_body(const std::string &data, bool is_file);
 
 private:
     std::string http_ver_;

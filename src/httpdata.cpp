@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <iostream>
+#include <utility>
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -398,21 +399,16 @@ bool HttpResponse::get_header(const std::string &key, std::string &val) const
     return true;
 }
 
-void HttpResponse::set_body(const std::string &data, HttpContentType type, bool is_file)
+void HttpResponse::set_body_file(const std::string &path, HttpContentType type, const std::string &charset)
 {
-    body_type_ = type;
-    body_is_file_ = is_file;
+    set_body(path, true);
+    update_content_type(type, charset);
+}
 
-    //BUG 现在默认是UTF-8编码，这个需要根据类型处理下
-    header_oper(HeaderOper::MODIFY, "Content-Type",
-                http_enum_to_str<HttpContentType>(type) + std::string("; charset=UTF-8"));
-
-    if (!body_is_file()) {
-        // 不是文件类型，直接计算"Content-Length"，
-        //!!! 文件类型需要在打开文件的时候手动的设置长度
-        header_oper(HeaderOper::ADD, "Content-Length", std::to_string(data.size()));
-    }
-    body_ = data;
+void HttpResponse::set_body_bin(const std::string &data, HttpContentType type, const std::string &charset)
+{
+    set_body(data, false);
+    update_content_type(type, charset);
 }
 
 void HttpResponse::dump_data()
@@ -462,6 +458,44 @@ void HttpResponse::make_base_rsp()
     maked_base_rsp_ = true;
 }
 
+std::string HttpResponse::def_charset(HttpContentType type)
+{
+    switch (type) {
+        case HttpContentType::HTML_TYPE:
+        case HttpContentType::JSON_TYPE:
+            return "; charset=UTF-8";
+        default:
+            return "";
+    }
+}
+
+void HttpResponse::update_content_type(HttpContentType type, const std::string &charset)
+{
+    body_type_ = type;
+
+    if (!charset.empty()) {
+        header_oper(HeaderOper::MODIFY, "Content-Type",
+                    http_enum_to_str<HttpContentType>(type)
+                      + std::string("; charset=") + charset);
+    } else {
+        header_oper(HeaderOper::MODIFY, "Content-Type",
+                    http_enum_to_str<HttpContentType>(type)
+                      + def_charset(type));
+    }
+}
+
+void HttpResponse::set_body(const std::string &data, bool is_file)
+{
+    body_is_file_ = is_file;
+
+    if (!body_is_file()) {
+        // 不是文件类型，直接计算"Content-Length"，
+        //!!! 文件类型需要在打开文件的时候手动的设置长度
+        header_oper(HeaderOper::ADD, "Content-Length", std::to_string(data.size()));
+    }
+    body_ = data;
+}
+
 HttpResponse def_err_handler(HttpCode code, const HttpRequest &req)
 {
     HttpResponse rsp(req);
@@ -474,7 +508,7 @@ HttpResponse def_err_handler(HttpCode code, const HttpRequest &req)
                            "<head><title>Lite Web Server</title></head>\r\n"
                            "<body><h1>";
     std::string err_body2 = std::string(http_enum_to_str<HttpCode>(code)) + ".</h1></body>\r\n</html>\r\n";
-    rsp.set_body(err_body1 + err_body2, HttpContentType::HTML_TYPE, false);
+    rsp.set_body_bin(err_body1 + err_body2, HttpContentType::HTML_TYPE);
 
     return rsp;
 }
