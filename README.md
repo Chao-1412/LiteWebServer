@@ -36,7 +36,7 @@ make
 
 1. WebBench测试
    
-   4线程，10000客户端，禁用所有日志，测试60秒，简单页面测试：
+   4线程，10000客户端，禁用所有日志，短连接，测试60秒，简单页面测试：
 
    ```C++
    static const std::string index_body = "<!DOCTYPE html>\r\n"
