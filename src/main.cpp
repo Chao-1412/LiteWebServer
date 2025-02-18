@@ -64,11 +64,12 @@ HttpResponse index_page(const HttpRequest &req)
     return rsp;
 }
 
-// HttpResponse hello_page(const HttpRequest &req)
-// {
-//     HttpResponse rsp(req);
-//     rsp.set_body(HttpContentType::
-// }
+HttpResponse hello_page(const HttpRequest &req)
+{
+    HttpResponse rsp(req);
+    rsp.set_body_file("hello.html", HttpContentType::HTML_TYPE);
+    return rsp;
+}
 
 
 int main()
@@ -148,9 +149,9 @@ int main()
             return rsp;
         }
     );
-    // UserConn::register_router("/hello", HttpMethod::GET, hello_page);
+    UserConn::register_router("/hello", HttpMethod::GET, hello_page);
 
-    ServerConf conf(8080, "/var/www/testsite");
+    ServerConf conf(8080, "../testsite");
     LiteWebServer server(conf);
     server.start_loop();
 
