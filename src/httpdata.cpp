@@ -381,7 +381,7 @@ bool HttpResponse::get_header(const std::string &key, std::string &val) const
     return true;
 }
 
-void HttpResponse::set_body(HttpContentType type, const std::string &data, bool is_file)
+void HttpResponse::set_body(const std::string &data, HttpContentType type, bool is_file)
 {
     body_type_ = type;
     body_is_file_ = is_file;
@@ -457,7 +457,7 @@ HttpResponse def_err_handler(HttpCode code, const HttpRequest &req)
                            "<head><title>Lite Web Server</title></head>\r\n"
                            "<body><h1>";
     std::string err_body2 = std::string(http_enum_to_str<HttpCode>(code)) + ".</h1></body>\r\n</html>\r\n";
-    rsp.set_body(HttpContentType::HTML_TYPE, err_body1 + err_body2, false);
+    rsp.set_body(err_body1 + err_body2, HttpContentType::HTML_TYPE, false);
 
     return rsp;
 }

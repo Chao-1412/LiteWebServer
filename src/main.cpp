@@ -60,9 +60,15 @@ static const std::string index_body = "<!DOCTYPE html>\r\n"
 HttpResponse index_page(const HttpRequest &req)
 {
     HttpResponse rsp(req);
-    rsp.set_body(HttpContentType::HTML_TYPE, index_body, false);
+    rsp.set_body(index_body, HttpContentType::HTML_TYPE, false);
     return rsp;
 }
+
+// HttpResponse hello_page(const HttpRequest &req)
+// {
+//     HttpResponse rsp(req);
+//     rsp.set_body(HttpContentType::
+// }
 
 
 int main()
@@ -138,10 +144,12 @@ int main()
         [](const HttpRequest &req) -> HttpResponse {
             HttpResponse rsp(req);
             std::string json_data = "{\"name\": \"John\", \"age\": 30}";
-            rsp.set_body(HttpContentType::JSON_TYPE, json_data, false);
+            rsp.set_body(json_data, HttpContentType::JSON_TYPE, false);
             return rsp;
         }
     );
+    // UserConn::register_router("/hello", HttpMethod::GET, hello_page);
+
     ServerConf conf(8080, "/var/www/testsite");
     LiteWebServer server(conf);
     server.start_loop();

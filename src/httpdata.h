@@ -273,18 +273,18 @@ public:
      * @brief 设置响应头
      * @param oper 操作类型
      * @param key 键
-     * @param val 值，DEL操作时，val可以为空或不传递
+     * @param val 值，DEL操作时，val可以传空
      */
     void header_oper(HeaderOper oper, const std::string &key, const std::string &val);
     bool get_header(const std::string &key, std::string &val) const;
     /**
      * @brief 设置响应体
-     * @param type 响应体类型
      * @param data 响应体数据
+     * @param type 响应体类型
      * @param is_file 是否是文件，true表示是文件，false表示二进制string流
      *                默认是文件类型，因为正常都是从文件读数据的！所以要用二进制流请手动设置
      */
-    void set_body(HttpContentType type, const std::string &data, bool is_file = true);
+    void set_body(const std::string &data, HttpContentType type, bool is_file = true);
     HttpContentType get_body_type() const { return body_type_; }
     bool body_is_file() const { return body_is_file_; }
     const std::string& get_body() const { return body_; }
