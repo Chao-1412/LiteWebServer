@@ -67,6 +67,7 @@ enum class HttpVersion
     X(UNKNOWN, 0x00, "")   \
     X(HTML_TYPE, 0x01, "text/html")   \
     X(JSON_TYPE, 0x02, "application/json")   \
+    X(XICON_TYPE, 0x04, "image/x-icon")   \
 
 enum class HttpContentType
 {
