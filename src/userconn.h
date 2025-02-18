@@ -15,7 +15,9 @@
 #include "serverconf.h"
 #include "httpdata.h"
 
+constexpr const int BUFFER_MIN_SIZE_R = 2048;
 #define HTTP_FILE_CHUNK_SIZE 64 * 1024
+
 
 class ConnLoop;
 
@@ -40,7 +42,7 @@ public:
         , connloop_(connloop)
         , conf_(conf)
         , cli_sock_(cli_sock)
-        , buffer_r_(conf_->buffer_size_r_, '\0')
+        , buffer_r_(BUFFER_MIN_SIZE_R, '\0')
         , buffer_r_bytes_(0)
         , req_parsed_bytes_(0)
         , rsp_(req_)

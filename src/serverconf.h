@@ -14,8 +14,7 @@ public:
                int listen_queue_n = 5,
                bool epoll_et_srv = false,
                bool epoll_et_conn = false,
-               uint16_t epoll_max_events = 4096,
-               uint16_t buffer_size_r = 2048)
+               uint16_t epoll_max_events = 4096)
         : port_(port)
         , www_root_path_(www_root_path)
         , nthread_(nthread)
@@ -23,7 +22,6 @@ public:
         , epoll_et_srv_(epoll_et_srv)
         , epoll_et_conn_(epoll_et_conn)
         , epoll_max_events_(epoll_max_events)
-        , buffer_size_r_(buffer_size_r)
         {/* TODO 校验一下参数是否可用 */};
 
 public:
@@ -35,7 +33,6 @@ public:
     bool epoll_et_srv_;
     bool epoll_et_conn_;
     uint16_t epoll_max_events_;
-    uint16_t buffer_size_r_;
 };
 
 #endif //SRC_SERVER_CONF_H_
