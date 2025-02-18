@@ -48,8 +48,8 @@ void UserConn::process_in()
         connloop_->mod_conn_event_read(cli_sock_);
         goto EXIT;
     }
-    SPDLOG_DEBUG("recv from client, cli_sock: {}, data: {}",
-                 cli_sock_, buffer_data_to_str(buffer_r_, buffer_r_bytes_));
+    // SPDLOG_DEBUG("recv from client, cli_sock: {}, data: {}",
+    //              cli_sock_, buffer_data_to_str(buffer_r_, buffer_r_bytes_));
 
     // 解析收到的数据
     req_parsed_bytes_ += req_.parse(buffer_r_, req_parsed_bytes_);
