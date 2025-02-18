@@ -65,9 +65,8 @@ enum class HttpVersion
 // new HttpContentType enum insert here
 #define HTTPCONTENTTYPE_ENUM \
     X(UNKNOWN, 0x00, "")   \
-    X(FILE_TYPE, 0x01, "")   \
-    X(HTML_TYPE, 0x02, "text/html")   \
-    X(JSON_TYPE, 0x04, "application/json")   \
+    X(HTML_TYPE, 0x01, "text/html")   \
+    X(JSON_TYPE, 0x02, "application/json")   \
 
 enum class HttpContentType
 {
@@ -139,10 +138,6 @@ LWS_CONSTEXPR HttpVersion http_str_to_enum<HttpVersion>(const char* str)
 template<>
 LWS_CONSTEXPR const char* http_enum_to_str<HttpContentType>(HttpContentType e)
 {
-    e = static_cast<HttpContentType>(
-        static_cast<int>(e) & ~static_cast<int>(HttpContentType::FILE_TYPE)
-    );
-
     switch (e) {
         #define X(NAME, CODE, DESC) case HttpContentType::NAME: return DESC;
         HTTPCONTENTTYPE_ENUM
@@ -284,12 +279,14 @@ public:
     bool get_header(const std::string &key, std::string &val) const;
     /**
      * @brief 设置响应体
-     * @param type 响应体类型，FILE_DATA需要和其他类型一起使用
+     * @param type 响应体类型
      * @param data 响应体数据
+     * @param is_file 是否是文件，true表示是文件，false表示二进制string流
+     *                默认是文件类型，因为正常都是从文件读数据的！所以要用二进制流请手动设置
      */
-    void set_body(HttpContentType type, const std::string &data);
+    void set_body(HttpContentType type, const std::string &data, bool is_file = true);
     HttpContentType get_body_type() const { return body_type_; }
-    bool body_is_file() const { return body_type_ == HttpContentType::FILE_TYPE; }
+    bool body_is_file() const { return body_is_file_; }
     const std::string& get_body() const { return body_; }
     const std::string& get_base_rsp() {
         if (!maked_base_rsp_) { make_base_rsp(); }
@@ -305,6 +302,7 @@ public:
         base_rsp_.clear();
         body_.clear();
         body_type_ = HttpContentType::HTML_TYPE;
+        body_is_file_ = true;
     }
     void dump_data();
     std::string dump_data_str();
@@ -320,6 +318,7 @@ private:
     std::string base_rsp_;
     std::string body_;
     HttpContentType body_type_;
+    bool body_is_file_;
 };
 
 HttpResponse def_err_handler(HttpCode code, const HttpRequest &req);

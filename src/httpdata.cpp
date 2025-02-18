@@ -349,6 +349,7 @@ HttpResponse::HttpResponse(const HttpRequest &req)
     , base_rsp_("")
     , body_("")
     , body_type_(HttpContentType::HTML_TYPE)
+    , body_is_file_(true)
 {
     req.get_header("Connection", headers_["Connection"]);
 }
@@ -380,19 +381,20 @@ bool HttpResponse::get_header(const std::string &key, std::string &val) const
     return true;
 }
 
-void HttpResponse::set_body(HttpContentType type, const std::string &data)
+void HttpResponse::set_body(HttpContentType type, const std::string &data, bool is_file)
 {
     body_type_ = type;
+    body_is_file_ = is_file;
 
-    // 现在默认是UTF-8编码
+    //BUG 现在默认是UTF-8编码，这个需要根据类型处理下
     header_oper(HeaderOper::MODIFY, "Content-Type",
                 http_enum_to_str<HttpContentType>(type) + std::string("; charset=UTF-8"));
 
-    if (!((int)body_type_ & (int)HttpContentType::FILE_TYPE)) {
-        // 不是文件类型，直接计算"Content-Length"，文件类型的需要手动设置长度
+    if (!body_is_file()) {
+        // 不是文件类型，直接计算"Content-Length"，
+        //!!! 文件类型需要在打开文件的时候手动的设置长度
         header_oper(HeaderOper::ADD, "Content-Length", std::to_string(data.size()));
     }
-
     body_ = data;
 }
 
@@ -455,7 +457,7 @@ HttpResponse def_err_handler(HttpCode code, const HttpRequest &req)
                            "<head><title>Lite Web Server</title></head>\r\n"
                            "<body><h1>";
     std::string err_body2 = std::string(http_enum_to_str<HttpCode>(code)) + ".</h1></body>\r\n</html>\r\n";
-    rsp.set_body(HttpContentType::HTML_TYPE, err_body1 + err_body2);
+    rsp.set_body(HttpContentType::HTML_TYPE, err_body1 + err_body2, false);
 
     return rsp;
 }

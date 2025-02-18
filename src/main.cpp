@@ -60,7 +60,7 @@ static const std::string index_body = "<!DOCTYPE html>\r\n"
 HttpResponse index_page(const HttpRequest &req)
 {
     HttpResponse rsp(req);
-    rsp.set_body(HttpContentType::HTML_TYPE, index_body);
+    rsp.set_body(HttpContentType::HTML_TYPE, index_body, false);
     return rsp;
 }
 
@@ -138,7 +138,7 @@ int main()
         [](const HttpRequest &req) -> HttpResponse {
             HttpResponse rsp(req);
             std::string json_data = "{\"name\": \"John\", \"age\": 30}";
-            rsp.set_body(HttpContentType::JSON_TYPE, json_data);
+            rsp.set_body(HttpContentType::JSON_TYPE, json_data, false);
             return rsp;
         }
     );
