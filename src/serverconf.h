@@ -29,8 +29,8 @@ public:
     std::string www_root_path_;
     uint8_t nthread_;
     int listen_queue_n_;
-    //TODO et mode not implemented now
     bool epoll_et_srv_;
+    //TODO conn et mode not implemented now
     bool epoll_et_conn_;
     uint16_t epoll_max_events_;
 };
