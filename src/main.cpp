@@ -142,7 +142,7 @@ int main()
             return rsp;
         }
     );
-    ServerConf conf(8080);
+    ServerConf conf(8080, "/var/www/testsite");
     LiteWebServer server(conf);
     server.start_loop();
 
