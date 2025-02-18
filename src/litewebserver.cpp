@@ -14,9 +14,13 @@
 #include <unistd.h>
 #include <sys/eventfd.h>
 
+// turn on/off logging statements at compile time
+// change this if need other log level
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
 #include "spdlog/spdlog.h"
-#include "spdlog/sinks/basic_file_sink.h"
 #include "spdlog/async.h"
+// #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/rotating_file_sink.h"
 
 #include "fdutil.h"
 #include "timeutil.h"
@@ -140,7 +144,15 @@ void LiteWebServer::start_loop()
 
 void LiteWebServer::init_log()
 {
-    // output to console
+    /**************************************************
+     * !!! 为了提高日志效率，日志等级在编译时期被禁用
+     * 调用set_level修改日志等级的同时需要修改SPDLOG_ACTIVE_LEVEL宏
+     * #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
+     **************************************************/
+
+    // CONSOLE MULTI_THREAD
+    // require:
+    // #include "spdlog/spdlog.h"
     // try {
     //     // Auto flush when "trace" or higher message is logged on all loggers
     //     spdlog::flush_on(spdlog::level::trace);
@@ -151,7 +163,9 @@ void LiteWebServer::init_log()
     //     std::cout << "Log initialization failed: " << ex.what() << std::endl;
     // }
 
-    // output to file with no rotation and multithread
+    // FILE NO_ROTATION MULTI_THREAD
+    // require:
+    // #include "spdlog/spdlog.h"
     // #include "spdlog/sinks/basic_file_sink.h"
     // try {
     //     // Auto flush when "trace" or higher message is logged on all loggers
@@ -165,20 +179,36 @@ void LiteWebServer::init_log()
     //     std::cout << "Log initialization failed: " << ex.what() << std::endl;
     // }
 
-    // ASYNCHRONOUS
-    // output to file with no rotation and multithread
-    // #include "spdlog/sinks/basic_file_sink.h"
+    // ASYNCHRONOUS FILE NO_ROTATION MULTI_THREAD
+    // require:
+    // #include "spdlog/spdlog.h"
     // #include "spdlog/async.h"
+    // #include "spdlog/sinks/basic_file_sink.h"
+    // try {
+    //     // Auto flush when "trace" or higher message is logged on all loggers
+    //     spdlog::flush_on(spdlog::level::info);
+    //     // Custom pattern
+    //     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P|%t] [%l] %v");
+    //     spdlog::set_level(spdlog::level::info);
+    //     spdlog::basic_logger_mt<spdlog::async_factory>("server_log", "litewebserver.log");
+    //     spdlog::set_default_logger(spdlog::get("server_log"));
+    // } catch (const spdlog::spdlog_ex &ex) {
+    //     std::cout << "Log initialization failed: " << ex.what() << std::endl;
+    // }
+
+    // ASYNCHRONOUS FILE ROTATION MULTI_THREAD
+    // require:
+    // #include "spdlog/spdlog.h"
+    // #include "spdlog/async.h"
+    // #include "spdlog/sinks/rotating_file_sink.h"
     try {
         // Auto flush when "trace" or higher message is logged on all loggers
         spdlog::flush_on(spdlog::level::info);
         // Custom pattern
         spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P|%t] [%l] %v");
-        //!!! 为了提高日志效率，日志等级在编译时期被禁用
-        // 修改set_level的同时需要修改spdlog/tweakme.h下的宏
-        // #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
         spdlog::set_level(spdlog::level::info);
-        spdlog::basic_logger_mt<spdlog::async_factory>("server_log", "litewebserver.log");
+        // create a file rotating logger with 10mb size max and 5 rotated files
+        spdlog::rotating_logger_mt<spdlog::async_factory>("server_log", "litewebserver.log", 1024 * 1024 * 10, 5);
         spdlog::set_default_logger(spdlog::get("server_log"));
     } catch (const spdlog::spdlog_ex &ex) {
         std::cout << "Log initialization failed: " << ex.what() << std::endl;
