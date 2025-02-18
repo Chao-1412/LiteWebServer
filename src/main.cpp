@@ -71,6 +71,13 @@ HttpResponse hello_page(const HttpRequest &req)
     return rsp;
 }
 
+HttpResponse favicon_ico(const HttpRequest &req)
+{
+    HttpResponse rsp(req);
+    rsp.set_body_file("favicon.ico", HttpContentType::XICON_TYPE);
+    return rsp;
+}
+
 
 int main()
 {
@@ -141,6 +148,7 @@ int main()
 //     return ret;
 
     UserConn::register_router("/", HttpMethod::GET, index_page);
+    UserConn::register_router("/favicon.ico", HttpMethod::GET, favicon_ico);
     UserConn::register_router("/json", HttpMethod::GET,
         [](const HttpRequest &req) -> HttpResponse {
             HttpResponse rsp(req);
