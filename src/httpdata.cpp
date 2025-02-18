@@ -371,6 +371,23 @@ void HttpResponse::header_oper(HeaderOper oper, const std::string &key, const st
     }
 }
 
+void HttpResponse::header_oper(HeaderOper oper, const std::string &key, std::string &&val)
+{
+    if (oper == HeaderOper::ADD || oper == HeaderOper::MODIFY) {
+        headers_[key] = std::move(val);
+        maked_base_rsp_ = false;
+    } else if (oper == HeaderOper::DEL) {
+        const auto &it = headers_.find(key);
+        if (it != headers_.end()) {
+            headers_.erase(it);
+            maked_base_rsp_ = false;
+        }
+    } else if (oper == HeaderOper::CLEAR) {
+        headers_.clear();
+        maked_base_rsp_ = false;
+    }
+}
+
 bool HttpResponse::get_header(const std::string &key, std::string &val) const
 {
     const auto &it = headers_.find(key);
