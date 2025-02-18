@@ -276,6 +276,7 @@ public:
      * @param val 值，DEL操作时，val可以传空
      */
     void header_oper(HeaderOper oper, const std::string &key, const std::string &val);
+    void header_oper(HeaderOper oper, const std::string &key, std::string &&val);
     bool get_header(const std::string &key, std::string &val) const;
     /**
      * @brief 设置响应体
