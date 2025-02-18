@@ -79,15 +79,16 @@ void UserConn::process_out()
     if (rsp_.body_is_file()) {
         std::string file_path = conf_->www_root_path_ + rsp_.get_body();
         file_fd_ = open(file_path.c_str(), O_RDONLY);
-        if (file_fd_ < 0) {
+        if (file_fd_ >= 0) {
+            struct stat file_stat;
+            fstat(file_fd_, &file_stat);
+            file_size_ = file_stat.st_size;
+            rsp_.header_oper(HttpResponse::HeaderOper::MODIFY,
+                            "Content-Length", std::to_string(file_size_));
+        } else {
             rsp_ = err_handler_[HttpCode::INTERNAL_SERVER_ERROR](req_);
-            SPDLOG_ERROR("open file failed, code: {}, msg: {}", errno, strerror(errno));
+            SPDLOG_ERROR("{} open failed, code: {}, msg: {}", file_path, errno, strerror(errno));
         }
-        struct stat file_stat;
-        fstat(file_fd_, &file_stat);
-        file_size_ = file_stat.st_size;
-        rsp_.header_oper(HttpResponse::HeaderOper::MODIFY,
-                         "Content-Length", std::to_string(file_size_));
     }
 
     if (!send_to_cli()) {
