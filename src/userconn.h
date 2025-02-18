@@ -16,8 +16,6 @@
 #include "httpdata.h"
 
 constexpr const int BUFFER_MIN_SIZE_R = 2048;
-#define HTTP_FILE_CHUNK_SIZE 64 * 1024
-
 
 class ConnLoop;
 

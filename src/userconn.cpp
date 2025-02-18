@@ -14,6 +14,8 @@
 #include "timeutil.h"
 // #include "debughelper.h"
 
+constexpr const int HTTP_FILE_CHUNK_SIZE = 64 * 1024;
+
 
 std::map<HttpCode, UserConn::HandleFunc> UserConn::err_handler_ = {
     {HttpCode::BAD_REQUEST, err_handler_400},
