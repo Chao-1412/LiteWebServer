@@ -95,7 +95,7 @@ LiteWebServer::~LiteWebServer()
 
 void LiteWebServer::start_loop()
 {
-    SPDLOG_INFO("START server main loop at {}...", system_nowtime_str(true));
+    SPDLOG_INFO("START server main loop...");
 
     running_ = true;
     int n_event = 0;
@@ -135,7 +135,7 @@ void LiteWebServer::start_loop()
         conn_loops_[i]->stop();
     }
 
-    SPDLOG_INFO("END server main loop at {}...", system_nowtime_str(true));
+    SPDLOG_INFO("END server main loop...");
 }
 
 void LiteWebServer::init_log()
