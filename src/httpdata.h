@@ -235,6 +235,7 @@ public:
     }
     const std::string& get_body() const { return body_; }
     void dump_data();
+    std::string dump_data_str();
 
 private:
     void set_bad_req() { is_bad_req_ = true; state_ = ParseState::PARSE_SUCCESS; }
@@ -306,6 +307,7 @@ public:
         body_type_ = HttpContentType::HTML_TYPE;
     }
     void dump_data();
+    std::string dump_data_str();
 
 private:
     void make_base_rsp();

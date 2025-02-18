@@ -8,10 +8,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-// #include "spdlog/spdlog.h"
+#include "spdlog/spdlog.h"
 
 #include "litewebserver.h"
-#include "timer.h"
+#include "timeutil.h"
 // #include "debughelper.h"
 
 
@@ -43,16 +43,15 @@ void UserConn::process_in()
     // 接收数据
     bool ret = recv_from_cli();
     if (ret != true) {
-        // SPDLOG_DEBUG("recv failed, regist read event, cli_sock: {}", cli_sock_);
         connloop_->mod_conn_event_read(cli_sock_);
         goto EXIT;
     }
-    // SPDLOG_DEBUG("recv from client, cli_sock: {}, data: {}", cli_sock_, buffer_data_to_str(buffer_r_, buffer_r_bytes_));
+    SPDLOG_DEBUG("recv from client, cli_sock: {}, data: {}",
+                 cli_sock_, buffer_data_to_str(buffer_r_, buffer_r_bytes_));
 
     // 解析收到的数据
     req_parsed_bytes_ += req_.parse(buffer_r_, req_parsed_bytes_);
     if (!req_.parse_complete()) {
-        // SPDLOG_DEBUG("parse failed, regist read event, cli_sock: {}", cli_sock_);
         connloop_->mod_conn_event_read(cli_sock_);
         goto EXIT;
     }
@@ -60,7 +59,6 @@ void UserConn::process_in()
     // 返回数据生成后注册epoll写事件，待可写事件触发后
     // 会调用UserConn::process_out，进行处理
     connloop_->mod_conn_event_write(cli_sock_);
-    // SPDLOG_DEBUG("parse successed, regist write event, cli_sock: {}", cli_sock_);
 
 EXIT:
     set_state(ConnState::CONN_CONNECTED);
@@ -77,7 +75,7 @@ void UserConn::process_out()
         file_fd_ = open(file_path.c_str(), O_RDONLY);
         if (file_fd_ < 0) {
             rsp_ = err_handler_[HttpCode::INTERNAL_SERVER_ERROR](req_);
-            // SPDLOG_ERROR("open file failed, code: {}, msg: {}", errno, strerror(errno));
+            SPDLOG_ERROR("open file failed, code: {}, msg: {}", errno, strerror(errno));
         }
         struct stat file_stat;
         fstat(file_fd_, &file_stat);
@@ -92,11 +90,9 @@ void UserConn::process_out()
         std::string conn_state;
         req_.get_header("Connection", conn_state);
         if (conn_state == "close") {
-            // SPDLOG_DEBUG("Client {} want to close connection", cli_sock_);
             connloop_->conn_close(cli_sock_);
         } else {
             // 如果不是直接断开链接，则重置连接状态
-            // SPDLOG_DEBUG("Client {} want to keep alive", cli_sock_);
             conn_state_reset();
             connloop_->mod_conn_event_read(cli_sock_);
         }
@@ -121,7 +117,7 @@ bool UserConn::recv_from_cli()
         // EAGAIN EWOULDBLOCK 重试
         // EINTR 系统中断
         // 先都返回false，
-        // 主线程会根据epoll触发的事件进行处理
+        // 事件线程会根据epoll触发的事件进行处理
         //（目前考虑到的EAGAIN EWOULDBLOCK EINTR）都有处理，不知道还有没有其他的
         return false;
     } else {
@@ -186,9 +182,8 @@ void UserConn::send_base_rsp()
         }
         send_bytes = send(cli_sock_, snd_beg, remain_size, 0);
         if (send_bytes <= 0) {
-            // 主线程会根据epoll触发的事件进行处理
+            // 事件线程会根据epoll触发的事件进行处理
             //（目前考虑到的EAGAIN EWOULDBLOCK EINTR）都有处理，不知道还有没有其他的
-            // SPDLOG_ERROR("send to client failed, code: {}, msg: {}", errno, strerror(errno));
             return;
         }
         rsp_base_snd_bytes_ += send_bytes;
@@ -212,9 +207,8 @@ void UserConn::send_body()
             }
             send_bytes = sendfile(cli_sock_, file_fd_, &rsp_body_snd_bytes_, send_bytes);
             if (send_bytes <= 0) {
-                // 主线程会根据epoll触发的事件进行处理
+                // 事件线程会根据epoll触发的事件进行处理
                 //（目前考虑到的EAGAIN EWOULDBLOCK EINTR）都有处理，不知道还有没有其他的
-                // SPDLOG_ERROR("send to client failed, code: {}, msg: {}", errno, strerror(errno));
                 return;
             }
         } else {
@@ -229,9 +223,8 @@ void UserConn::send_body()
             send_bytes = send(cli_sock_, snd_beg, remain_size, 0);
 
             if (send_bytes <= 0) {
-                // 主线程会根据epoll触发的事件进行处理
+                // 事件线程会根据epoll触发的事件进行处理
                 //（目前考虑到的EAGAIN EWOULDBLOCK EINTR）都有处理，不知道还有没有其他的
-                // SPDLOG_ERROR("send to client failed, code: {}, msg: {}", errno, strerror(errno));
                 return;
             }
             rsp_body_snd_bytes_ += send_bytes;

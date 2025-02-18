@@ -10,7 +10,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-// #include "spdlog/spdlog.h"
+#include "spdlog/spdlog.h"
 
 #include "fdutil.h"
 
@@ -67,7 +67,7 @@ void ConnLoop::loop()
         // 如果等待事件失败，且不是因为系统中断造成的，
         // 直接退出主循环
         if (n_event < 0 && errno != EINTR) {
-            // SPDLOG_ERROR("epoll_wait error: {}", strerror(errno));
+            SPDLOG_ERROR("eventloop epoll_wait error: {}", strerror(errno));
             break;
         }
 
@@ -149,7 +149,7 @@ void ConnLoop::cmd_send(ConnLoopCmd cmd)
     char snd = static_cast<char>(cmd);
     int ret = write(cmd_sockpair_[0], &snd, sizeof(snd));
     if (ret != sizeof(snd)) {
-        // SPDLOG_ERROR("write cmd_sockpair_[0] error: {}", strerror(errno));
+        SPDLOG_ERROR("write cmd_sockpair_[0] error: {}", strerror(errno));
     }
 }
 
@@ -186,7 +186,10 @@ void ConnLoop::cmd_recv()
         // 除了系统中断外，都应该直接退出，目前是这样的
         if (ret <= 0) {
             if (errno == EINTR) { continue; }
-            else { break; }
+            else {
+                SPDLOG_ERROR("cmd_recv read error: {}", strerror(errno));
+                break;
+            }
         }
 
         // 处理每一个命令

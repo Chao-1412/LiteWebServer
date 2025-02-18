@@ -14,11 +14,12 @@
 #include <unistd.h>
 #include <sys/eventfd.h>
 
-// #include "spdlog/spdlog.h"
-// #include "spdlog/sinks/basic_file_sink.h"
-// #include "spdlog/async.h"
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/async.h"
 
 #include "fdutil.h"
+#include "timeutil.h"
 // #include "debughelper.h"
 
 
@@ -94,7 +95,8 @@ LiteWebServer::~LiteWebServer()
 
 void LiteWebServer::start_loop()
 {
-    // SPDLOG_DEBUG("Start server loop...");
+    SPDLOG_INFO("START server main loop at {}...", system_nowtime_str(true));
+
     running_ = true;
     int n_event = 0;
 
@@ -104,7 +106,7 @@ void LiteWebServer::start_loop()
         // 如果等待事件失败，且不是因为系统中断造成的，
         // 直接退出主循环
         if (n_event < 0 && errno != EINTR) {
-            // SPDLOG_ERROR("epoll_wait error: {}", strerror(errno));
+            SPDLOG_ERROR("Main server loop epoll_wait error: {}", strerror(errno));
             running_ = false;
             break;
         }
@@ -119,7 +121,7 @@ void LiteWebServer::start_loop()
             if (sockfd == srv_sock_) {
                 deal_new_conn_greedy();
             } else if (sockfd == exit_event_) {
-                // SPDLOG_DEBUG("Recive exit signal");
+                SPDLOG_DEBUG("Main server loop recive exit signal");
                 running_ = false;
                 break;
             }
@@ -132,6 +134,8 @@ void LiteWebServer::start_loop()
     for (int i = 0; i < srv_conf_.nthread_; ++i) {
         conn_loops_[i]->stop();
     }
+
+    SPDLOG_INFO("END server main loop at {}...", system_nowtime_str(true));
 }
 
 void LiteWebServer::init_log()
@@ -165,17 +169,20 @@ void LiteWebServer::init_log()
     // output to file with no rotation and multithread
     // #include "spdlog/sinks/basic_file_sink.h"
     // #include "spdlog/async.h"
-    // try {
-    //     // Auto flush when "trace" or higher message is logged on all loggers
-    //     spdlog::flush_on(spdlog::level::debug);
-    //     // Custom pattern
-    //     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P|%t] [%l] %v");
-    //     spdlog::set_level(spdlog::level::debug);
-    //     spdlog::basic_logger_mt<spdlog::async_factory>("server_log", "litewebserver.log");
-    //     spdlog::set_default_logger(spdlog::get("server_log"));
-    // } catch (const spdlog::spdlog_ex &ex) {
-    //     std::cout << "Log initialization failed: " << ex.what() << std::endl;
-    // }
+    try {
+        // Auto flush when "trace" or higher message is logged on all loggers
+        spdlog::flush_on(spdlog::level::info);
+        // Custom pattern
+        spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%P|%t] [%l] %v");
+        //!!! 为了提高日志效率，日志等级在编译时期被禁用
+        // 修改set_level的同时需要修改spdlog/tweakme.h下的宏
+        // #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
+        spdlog::set_level(spdlog::level::info);
+        spdlog::basic_logger_mt<spdlog::async_factory>("server_log", "litewebserver.log");
+        spdlog::set_default_logger(spdlog::get("server_log"));
+    } catch (const spdlog::spdlog_ex &ex) {
+        std::cout << "Log initialization failed: " << ex.what() << std::endl;
+    }
 }
 
 void LiteWebServer::create_listen_service()
@@ -280,7 +287,10 @@ void LiteWebServer::deal_new_conn_greedy()
         if (cli_sock < 0) {
             // 除了系统中断外，都应该直接退出，目前是这样的
             if (errno == EINTR) { continue; }
-            else { break; }
+            else {
+                SPDLOG_ERROR("deal_new_conn_greedy accept error: {}", strerror(errno));
+                break;
+            }
         }
 
         FdUtil::set_nonblocking(cli_sock);

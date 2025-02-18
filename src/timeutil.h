@@ -6,16 +6,44 @@
 #include <queue>
 #include <deque>
 #include <unordered_map>
+#include <iomanip>
+#include <ctime>
+#include <iostream>
 
 #include <stdint.h>
 
 // #include "spdlog/spdlog.h"
 
 using SteadyClock = std::chrono::steady_clock;
+using SystemClock = std::chrono::system_clock;
 using MilliSeconds = std::chrono::milliseconds;
 constexpr const int DEF_CHK_MIN_TIME_MS = 10 * 1000;
 constexpr const int DEF_TIMER_EXPIRE_MS = DEF_CHK_MIN_TIME_MS;
 
+/**
+ * @brief 获取当前时间的字符串
+ *        可能比较慢？不建议频繁调用
+ * @return 时间字符串，格式为：2023-07-14 10:10:10
+ */
+inline std::string system_nowtime_str(bool ms = false)
+{
+    SystemClock::time_point now = SystemClock::now();
+    SystemClock::duration duration = now.time_since_epoch();
+    MilliSeconds millis = std::chrono::duration_cast<MilliSeconds>(duration) % 1000;
+
+    std::time_t now_time = SystemClock::to_time_t(now);
+    std::tm local_time = *std::localtime(&now_time);
+    
+    std::ostringstream oss;
+    if (ms) {
+        oss << std::put_time(&local_time, "%Y-%m-%d %H:%M:%S")
+            << '.' << std::setfill('0') << std::setw(3) << millis.count();
+    } else {
+        oss << std::put_time(&local_time, "%Y-%m-%d %H:%M:%S");
+    }
+
+    return oss.str();
+}
 
 struct TimerNode 
 {
@@ -91,7 +119,6 @@ public:
 
     void handle_expired_timers(std::vector<int> &expired)
     {
-        // SPDLOG_DEBUG("handle_expired_timers...");
         auto now = SteadyClock::now();
         while (!timer_queue_.empty()) {
             auto top = timer_queue_.top();

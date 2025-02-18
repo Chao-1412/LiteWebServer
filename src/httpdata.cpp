@@ -107,6 +107,34 @@ void HttpRequest::dump_data()
     }
 }
 
+std::string HttpRequest::dump_data_str()
+{
+    std::string data;
+    data += "====================================\n";
+    data += "Current http req data:\n";
+    data += "is complete: " + std::to_string(parse_complete()) + "\n";
+    data += "is bad req: " + std::to_string(is_bad_req()) + "\n";
+    data += "parse state: " + std::to_string((int)state_) + "\n";
+    data += "method: " + std::to_string((int)method_)
+            + " "
+            + http_enum_to_str<HttpMethod>(method_) + "\n";
+    data += "path: " + path_ + "\n";
+    data += "http_ver: " + http_ver_ + "\n";
+    data += "body: " + body_ + "\n";
+
+    data += "header:\n";
+    for (const auto &kv : headers_) {
+        data += "    " + kv.first + ": " + kv.second + "\n";
+    }
+
+    data += "param:\n";
+    for (const auto &kv : param_) {
+        data += "    " + kv.first + ": " + kv.second + "\n";
+    }
+
+    return data;
+}
+
 uint32_t HttpRequest::parse_req_line(const std::string &data, uint32_t start_idx)
 {
     // 获取 请求行
@@ -380,6 +408,22 @@ void HttpResponse::dump_data()
     for (const auto &kv : headers_) {
         std::cout << "    " << kv.first << ": " << kv.second << std::endl;
     }
+}
+
+std::string HttpResponse::dump_data_str()
+{
+    std::string data;
+    data += "====================================\n";
+    data += "Current http rsp data:\n";
+    data += "code: " + std::to_string((int)code_)
+            + " "
+            + http_enum_to_str<HttpCode>(code_) + "\n";
+    data += "header:\n";
+    for (const auto &kv : headers_) {
+        data += "    " + kv.first + ": " + kv.second + "\n";
+    }
+
+    return data;
 }
 
 void HttpResponse::make_base_rsp()
