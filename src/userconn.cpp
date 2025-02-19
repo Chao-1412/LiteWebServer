@@ -206,6 +206,7 @@ void UserConn::send_body()
     ssize_t send_bytes = 0;
 
     while (true) {
+        //BUG 优化一下不要每次循环都判断是不是文件类型
         if (rsp_.body_is_file()) {
             send_bytes = file_size_ - rsp_body_snd_bytes_;
             if (send_bytes <= 0) {
