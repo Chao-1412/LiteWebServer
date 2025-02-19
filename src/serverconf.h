@@ -31,6 +31,7 @@ public:
 
 public:
     uint16_t port_;
+    // document-root
     std::string doc_root_;
     uint8_t nthread_;
     int listen_queue_n_;
