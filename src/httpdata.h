@@ -176,7 +176,7 @@ inline HttpContentType get_file_content_type(const std::string &path)
     if (extension == ".jpeg") { return HttpContentType::JPEG_TYPE; }
     if (extension == ".png") { return HttpContentType::PNG_TYPE; }
 
-    return HttpContentType::UNKNOWN;
+    return HttpContentType::UNKNOWN;    
 }
 
 
@@ -223,8 +223,8 @@ public:
      */
     bool is_bad_req() const { return is_bad_req_; }
     HttpMethod get_method() const { return method_; }
-    std::string get_path() const { return path_; }
-    std::string get_http_ver() const { return http_ver_; }
+    const std::string& get_path() const { return path_; }
+    const std::string& get_http_ver() const { return http_ver_; }
     /**
      * @brief 获取请求头
      * @param val 输出参数值
