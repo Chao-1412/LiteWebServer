@@ -474,6 +474,13 @@ void HttpResponse::update_content_type(HttpContentType type, const std::string &
 {
     body_type_ = type;
 
+    if (type == HttpContentType::UNKNOWN) {
+        //BUG 如果是未知类型，现在的处理方式是不发类型给客户端，让客户端自己处理
+        // 不确定是否会引发部分客户端的BUG
+        header_oper(HeaderOper::DEL, "Content-Type", "");
+        return;
+    }
+
     if (!charset.empty()) {
         header_oper(HeaderOper::MODIFY, "Content-Type",
                     http_enum_to_str<HttpContentType>(type)
