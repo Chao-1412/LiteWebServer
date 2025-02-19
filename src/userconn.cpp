@@ -12,6 +12,7 @@
 
 #include "litewebserver.h"
 #include "timeutil.h"
+#include "filepathutil.h"
 // #include "debughelper.h"
 
 constexpr const int HTTP_FILE_CHUNK_SIZE = 64 * 1024;
@@ -77,7 +78,7 @@ void UserConn::process_out()
     // 如果是文件类型，先打开文件
     // 打不开的话，返回500错误
     if (rsp_.body_is_file()) {
-        std::string file_path = conf_->doc_root_ + rsp_.get_body();
+        std::string file_path = combine_two_path(conf_->doc_root_, rsp_.get_body());
         file_fd_ = open(file_path.c_str(), O_RDONLY);
         if (file_fd_ >= 0) {
             struct stat file_stat;
