@@ -80,7 +80,7 @@ TEST(FilePathUtilTest, CombineTwoPath) {
 
     path1 = "";
     newpath = combine_two_path(path1, path2);
-    EXPECT_EQ(newpath, "/cccddd");
+    EXPECT_EQ(newpath, "cccddd");
 
     path2 = "";
     newpath = combine_two_path(path1, path2);
