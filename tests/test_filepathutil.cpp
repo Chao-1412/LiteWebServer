@@ -54,3 +54,39 @@ TEST(FilePathUtilTest, GetExtension) {
     extension = get_file_extension(path);
     EXPECT_EQ(extension, ".c/");
 }
+
+TEST(FilePathUtilTest, CombineTwoPath) {
+    std::string path1 = "/aaabbb";
+    std::string path2 = "/cccddd";
+    std::string newpath = "";
+
+    newpath = combine_two_path(path1, path2);
+    EXPECT_EQ(newpath, "/aaabbb/cccddd");
+
+    path1 = "/aaabbb";
+    path2 = "cccddd";
+    newpath = combine_two_path(path1, path2);
+    EXPECT_EQ(newpath, "/aaabbb/cccddd");
+
+    path1 = "/aaabbb/";
+    path2 = "/cccddd";
+    newpath = combine_two_path(path1, path2);
+    EXPECT_EQ(newpath, "/aaabbb/cccddd");
+
+    path1 = "/aaabbb/";
+    path2 = "cccddd";
+    newpath = combine_two_path(path1, path2);
+    EXPECT_EQ(newpath, "/aaabbb/cccddd");    
+
+    path1 = "";
+    newpath = combine_two_path(path1, path2);
+    EXPECT_EQ(newpath, "/cccddd");
+
+    path2 = "";
+    newpath = combine_two_path(path1, path2);
+    EXPECT_EQ(newpath, "");
+
+    path1 = "/aaabbb";
+    newpath = combine_two_path(path1, path2);
+    EXPECT_EQ(newpath, "/aaabbb");
+}
