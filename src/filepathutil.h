@@ -32,4 +32,30 @@ inline std::string get_file_extension(const std::string &file_path)
     return "";
 }
 
+/**
+ * @brief 组合两个路径
+ *        简单组合，只检查first的最后一个字符是否为'/'
+ * @param first 第一个路径
+ * @param second 第二个路径
+ * @return 组合后的路径
+ */
+inline std::string combine_two_path(const std::string &first, const std::string &second)
+{
+    if (first.empty()) {
+        return second;
+    }
+
+    if (second.empty()) {
+        return first;
+    } 
+
+    if (first.back() == '/' && second.front() == '/') {
+        return first + second.substr(1);
+    } else if (first.back() != '/' && second.front() != '/') {
+        return first + '/' + second;
+    } else {
+        return first + second;
+    }
+}
+
 #endif //SRC_FILEPATHUTIL_H_
