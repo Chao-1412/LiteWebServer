@@ -497,6 +497,13 @@ void HttpResponse::set_body(const std::string &data, bool is_file)
     body_ = data;
 }
 
+HttpResponse static_file_handler(const HttpRequest &req)
+{
+    HttpResponse rsp(req);
+    rsp.set_body_file(req.get_path(), get_file_content_type(req.get_path()));
+    return rsp;
+}
+
 HttpResponse def_err_handler(HttpCode code, const HttpRequest &req)
 {
     HttpResponse rsp(req);

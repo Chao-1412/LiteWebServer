@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include "stringutil.h"
+#include "filepathutil.h"
 
 
 template <typename EnumType> LWS_CONSTEXPR const char* http_enum_to_str(EnumType e);
@@ -159,6 +160,22 @@ LWS_CONSTEXPR HttpContentType http_str_to_enum<HttpContentType>(const char* str)
     #define X(NAME, CODE, DESC) if (StringUtil::ch_str_is_equal(str, DESC)) return HttpContentType::NAME;
     HTTPCONTENTTYPE_ENUM
     #undef X
+    return HttpContentType::UNKNOWN;
+}
+
+inline HttpContentType get_file_content_type(const std::string &path)
+{
+    std::string extension = get_file_extension(path);
+
+    if (extension == ".html") { return HttpContentType::HTML_TYPE; }
+    if (extension == ".json") { return HttpContentType::JSON_TYPE; }
+    if (extension == ".ico") { return HttpContentType::XICON_TYPE; }
+    if (extension == ".css") { return HttpContentType::CSS_TYPE; }
+    if (extension == ".js") { return HttpContentType::JS_TYPE; }
+    if (extension == ".svg") { return HttpContentType::SVGXML_TYPE; }
+    if (extension == ".jpeg") { return HttpContentType::JPEG_TYPE; }
+    if (extension == ".png") { return HttpContentType::PNG_TYPE; }
+
     return HttpContentType::UNKNOWN;
 }
 
@@ -332,6 +349,7 @@ private:
     bool body_is_file_;
 };
 
+HttpResponse static_file_handler(const HttpRequest &req);
 HttpResponse def_err_handler(HttpCode code, const HttpRequest &req);
 HttpResponse err_handler_400(const HttpRequest &req);
 HttpResponse err_handler_404(const HttpRequest &req);

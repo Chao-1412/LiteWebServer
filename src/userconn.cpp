@@ -143,17 +143,16 @@ void UserConn::route_path()
         std::string path = req_.get_path();
         HttpMethod method = req_.get_method();
         const auto &it_path = router_.find(path);
-        if (it_path == router_.end()) {
-            rsp_ = err_handler_[HttpCode::NOT_FOUND](req_);
-            return;
+        if (it_path != router_.end()) {
+            const auto &call_fn = it_path->second.find(method);
+            if (call_fn != it_path->second.end()) {
+                rsp_ = call_fn->second(req_);
+            } else {
+                rsp_ = err_handler_[HttpCode::NOT_ALLOWED](req_);
+            }
+        } else {
+            rsp_ = static_file_handler(req_);
         }
-        const auto &call_fn = it_path->second.find(method);
-        if (call_fn == it_path->second.end()) {
-            rsp_ = err_handler_[HttpCode::NOT_ALLOWED](req_);
-            return;
-        }
-
-        rsp_ = call_fn->second(req_);
     }
 }
 
