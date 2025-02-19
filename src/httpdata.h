@@ -349,6 +349,7 @@ private:
     bool body_is_file_;
 };
 
+HttpResponse root_handler(const HttpRequest &req);
 HttpResponse static_file_handler(const HttpRequest &req);
 HttpResponse def_err_handler(HttpCode code, const HttpRequest &req);
 HttpResponse err_handler_400(const HttpRequest &req);

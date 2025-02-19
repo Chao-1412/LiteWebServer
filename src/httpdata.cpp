@@ -504,6 +504,13 @@ void HttpResponse::set_body(const std::string &data, bool is_file)
     body_ = data;
 }
 
+HttpResponse root_handler(const HttpRequest &req)
+{
+    HttpResponse rsp(req);
+    rsp.set_body_file("index.html", HttpContentType::HTML_TYPE);
+    return rsp;
+}
+
 HttpResponse static_file_handler(const HttpRequest &req)
 {
     HttpResponse rsp(req);

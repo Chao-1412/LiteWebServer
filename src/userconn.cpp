@@ -152,7 +152,11 @@ void UserConn::route_path()
                 rsp_ = err_handler_[HttpCode::NOT_ALLOWED](req_);
             }
         } else {
-            rsp_ = static_file_handler(req_);
+            if (req_.get_path() == "/") {
+                rsp_ = root_handler(req_);
+            } else {
+                rsp_ = static_file_handler(req_);
+            }
         }
     }
 }
