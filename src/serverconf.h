@@ -25,9 +25,7 @@ public:
         , epoll_et_srv_(epoll_et_srv)
         , epoll_et_conn_(epoll_et_conn)
         , epoll_max_events_(epoll_max_events)
-        {/* TODO 校验一下参数是否可用 */
-            dir_fix_last_slash(doc_root_);
-        };
+        {/* TODO 校验一下参数是否可用 */};
 
 public:
     uint16_t port_;
