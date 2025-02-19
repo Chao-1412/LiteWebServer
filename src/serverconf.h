@@ -12,26 +12,26 @@ class ServerConf
 {
 public:
     ServerConf(uint16_t port,
-               std::string www_root_path,
+               std::string doc_root,
                uint8_t nthread = 4,
                int listen_queue_n = 5,
                bool epoll_et_srv = false,
                bool epoll_et_conn = false,
                uint16_t epoll_max_events = 4096)
         : port_(port)
-        , www_root_path_(www_root_path)
+        , doc_root_(doc_root)
         , nthread_(nthread)
         , listen_queue_n_(listen_queue_n)
         , epoll_et_srv_(epoll_et_srv)
         , epoll_et_conn_(epoll_et_conn)
         , epoll_max_events_(epoll_max_events)
         {/* TODO 校验一下参数是否可用 */
-            dir_fix_last_slash(www_root_path_);
+            dir_fix_last_slash(doc_root_);
         };
 
 public:
     uint16_t port_;
-    std::string www_root_path_;
+    std::string doc_root_;
     uint8_t nthread_;
     int listen_queue_n_;
     bool epoll_et_srv_;
