@@ -68,6 +68,12 @@ enum class HttpVersion
     X(HTML_TYPE, 0x01, "text/html")   \
     X(JSON_TYPE, 0x02, "application/json")   \
     X(XICON_TYPE, 0x04, "image/x-icon")   \
+    X(CSS_TYPE, 0x08, "text/css")   \
+    X(JS_TYPE, 0x10, "text/javascript")   \
+    X(SVGXML_TYPE, 0x20, "image/svg+xml")   \
+    X(JPEG_TYPE, 0x40, "image/jpeg")   \
+    X(PNG_TYPE, 0x80, "image/png")   \
+    
 
 enum class HttpContentType
 {

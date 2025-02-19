@@ -463,6 +463,7 @@ std::string HttpResponse::def_charset(HttpContentType type)
     switch (type) {
         case HttpContentType::HTML_TYPE:
         case HttpContentType::JSON_TYPE:
+        case HttpContentType::CSS_TYPE:
             return "; charset=UTF-8";
         default:
             return "";
