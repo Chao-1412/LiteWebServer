@@ -8,10 +8,6 @@ option(ENABLE_UNITTEST "Enable unittest" OFF)
 project(LiteWebServer VERSION 1.0.0)
 set(TARGET litewebserver)
 
-include_directories(
-    src/
-)
-
 set(SRC_FILE 
     src/main.cpp
     src/litewebserver.cpp
