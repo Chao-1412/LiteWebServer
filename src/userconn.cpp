@@ -210,9 +210,8 @@ void UserConn::send_body()
 {
     ssize_t send_bytes = 0;
 
+    if (rsp_.body_is_file()) {
     while (true) {
-        //BUG 优化一下不要每次循环都判断是不是文件类型
-        if (rsp_.body_is_file()) {
             send_bytes = file_size_ - rsp_body_snd_bytes_;
             if (send_bytes <= 0) {
                 body_snd_ = true;
@@ -226,9 +225,12 @@ void UserConn::send_body()
             if (send_bytes <= 0) {
                 // 事件线程会根据epoll触发的事件进行处理
                 //（目前考虑到的EAGAIN EWOULDBLOCK EINTR）都有处理，不知道还有没有其他的
+                //TODO 调整系统缓冲区大小是否能提升性能？
                 return;
             }
+            }
         } else {
+        while (true) {
             size_t remain_size = rsp_.get_body().size() - rsp_body_snd_bytes_;
             const char *snd_beg = rsp_.get_body().data() + rsp_body_snd_bytes_;
 
