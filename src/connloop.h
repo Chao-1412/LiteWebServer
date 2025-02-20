@@ -69,7 +69,7 @@ private:
     // 所以提供个用于交换数据的内部变量，提高访问性能
     std::vector<int> new_cli_socks_swap_;
     std::mutex new_cli_socks_mtx_;
-    //TODO use pipe？
+    //TODO use pipe or eventfd?
     int cmd_sockpair_[2];
     char cmd_r_buf_[DEF_CMD_BUFF_LEN];
 };
