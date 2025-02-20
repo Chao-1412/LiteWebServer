@@ -5,7 +5,7 @@ option(ENABLE_UNITTEST "Enable unittest" OFF)
 # 这个是全局设定的
 # set(CMAKE_BUILD_TYPE Debug)
 
-project(LiteWebServer VERSION 1.0)
+project(LiteWebServer VERSION 1.0.0)
 set(TARGET litewebserver)
 
 include_directories(
