@@ -75,9 +75,14 @@ void UserConn::process_out()
 
     // SPDLOG_DEBUG("response current data: {}", rsp_.dump_data_str());
 
-    // 如果是文件类型，先打开文件
+    // 如果是文件类型，打开文件
     // 打不开的话，返回500错误
-    if (rsp_.body_is_file()) {
+    //!!! 这里必须判断file_fd_是否是已经打开的，
+    // 因为发送过程可能因为文件过大，系统缓冲区满而无法一次发完
+    // 这时会重新注册EPOLLOUT事件，导致process_out重入，
+    // 如果再次打开文件，旧的文件描述符会发生泄漏，
+    // 出现越来越多的未关闭描述符
+    if (rsp_.body_is_file() && file_fd_ == -1) {
         std::string file_path = combine_two_path(conf_->doc_root_, rsp_.get_body());
         file_fd_ = open(file_path.c_str(), O_RDONLY);
         if (file_fd_ >= 0) {
