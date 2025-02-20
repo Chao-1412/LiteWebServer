@@ -7,6 +7,7 @@ option(ENABLE_UNITTEST "Enable unittest" OFF)
 
 project(LiteWebServer VERSION 1.0.0)
 set(TARGET litewebserver)
+configure_file(src/serverinfo.h.in serverinfo.h)
 
 set(SRC_FILE 
     src/main.cpp
@@ -18,6 +19,7 @@ set(SRC_FILE
 
 add_executable(${TARGET} ${SRC_FILE})
 target_include_directories(${TARGET} PRIVATE
+    "${PROJECT_BINARY_DIR}"
     src/
 )
 # # google perftools
