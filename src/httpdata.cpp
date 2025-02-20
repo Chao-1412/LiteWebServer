@@ -416,7 +416,8 @@ void HttpResponse::set_body_bin(const std::string &data, HttpContentType type, c
 void HttpResponse::set_no_body()
 {
     body_is_file_ = false;
-    header_oper(HeaderOper::DEL, "Content-Length", "");
+    header_oper(HeaderOper::MODIFY, "Content-Length", "0");
+    header_oper(HeaderOper::DEL, "Content-Type", "");
 }
 
 void HttpResponse::dump_data()
@@ -547,7 +548,7 @@ HttpResponse err_handler_301(const HttpRequest &req)
 {
     HttpResponse rsp(req);
     rsp.set_code(HttpCode::MOVED_PERMANENTLY);
-    rsp.header_oper(HttpResponse::HeaderOper::MODIFY,
+    rsp.header_oper(HttpResponse::HeaderOper::ADD,
                     "Location", req.get_path() + "/");
     rsp.set_no_body();
     return rsp;
