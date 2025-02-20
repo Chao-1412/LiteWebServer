@@ -5,7 +5,6 @@
 #include <functional>
 #include <map>
 #include <memory>
-#include <atomic>
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -26,17 +25,10 @@ public:
     static void register_router(const std::string &path, HttpMethod method, HandleFunc func);
 
 public:
-    enum ConnState {
-        CONN_CONNECTED,
-        CONN_DEALING,
-    };
-
-public:
     UserConn(ConnLoop *const connloop,
              const ServerConf *const conf,
              int cli_sock)
-        : state_(ConnState::CONN_CONNECTED)
-        , connloop_(connloop)
+        : connloop_(connloop)
         , conf_(conf)
         , cli_sock_(cli_sock)
         , buffer_r_(BUFFER_MIN_SIZE_R, '\0')
@@ -61,8 +53,6 @@ public:
 public:
     void process_in();
     void process_out();
-    void set_state(ConnState state) { state_ = state; }
-    ConnState get_state() {return state_; }
 
 private:
     bool recv_from_cli();
@@ -86,7 +76,6 @@ private:
         req_.reset();
         req_parsed_bytes_ = 0;
         rsp_.reset();
-        state_ = ConnState::CONN_CONNECTED;
         base_rsp_snd_ = false;
         body_snd_ = false;
         rsp_base_snd_bytes_ = 0;
@@ -99,7 +88,6 @@ private:
     static std::map<std::string, std::map<HttpMethod, HandleFunc> > router_;
 
 private:
-    std::atomic<ConnState> state_;
     ConnLoop *const connloop_;
     const ServerConf *const conf_;
     int cli_sock_;

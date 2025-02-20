@@ -47,7 +47,7 @@ void UserConn::process_in()
     bool ret = recv_from_cli();
     if (ret != true) {
         connloop_->mod_conn_event_read(cli_sock_);
-        goto EXIT;
+        return;
     }
     // SPDLOG_DEBUG("recv from client, cli_sock: {}, data: {}",
     //              cli_sock_, buffer_data_to_str(buffer_r_, buffer_r_bytes_));
@@ -56,7 +56,7 @@ void UserConn::process_in()
     req_parsed_bytes_ += req_.parse(buffer_r_, req_parsed_bytes_);
     if (!req_.parse_complete()) {
         connloop_->mod_conn_event_read(cli_sock_);
-        goto EXIT;
+        return;
     }
 
     // SPDLOG_DEBUG("request current data: {}", req_.dump_data_str());
@@ -64,9 +64,6 @@ void UserConn::process_in()
     // 返回数据生成后注册epoll写事件，待可写事件触发后
     // 会调用UserConn::process_out，进行处理
     connloop_->mod_conn_event_write(cli_sock_);
-
-EXIT:
-    set_state(ConnState::CONN_CONNECTED);
 }
 
 void UserConn::process_out()
@@ -110,9 +107,6 @@ void UserConn::process_out()
             connloop_->mod_conn_event_read(cli_sock_);
         }
     }
-
-// EXIT:
-    set_state(ConnState::CONN_CONNECTED);
 }
 
 //BUG 需要考虑数据很大，撑爆缓冲区满的情况
