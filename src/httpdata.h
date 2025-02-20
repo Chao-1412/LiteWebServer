@@ -37,6 +37,7 @@ enum class HttpMethod
 #define HTTPCODE_ENUM                   \
     X(UNKNOWN, 0, "Unknown")            \
     X(OK, 200, "OK")                    \
+    X(MOVED_PERMANENTLY, 301, "Moved Permanently") \
     X(BAD_REQUEST, 400, "Bad Request")  \
     X(NOT_FOUND, 404, "Not Found")      \
     X(FORBIDDEN, 403, "Forbidden")      \
@@ -313,6 +314,7 @@ public:
      */
     void set_body_file(const std::string &path, HttpContentType type, const std::string &charset = "");
     void set_body_bin(const std::string &data, HttpContentType type, const std::string &charset = "");
+    void set_no_body();
     HttpContentType get_body_type() const { return body_type_; }
     bool body_is_file() const { return body_is_file_; }
     const std::string& get_body() const { return body_; }
@@ -355,6 +357,7 @@ private:
 HttpResponse root_handler(const HttpRequest &req);
 HttpResponse static_file_handler(const HttpRequest &req);
 HttpResponse def_err_handler(HttpCode code, const HttpRequest &req);
+HttpResponse err_handler_301(const HttpRequest &req); 
 HttpResponse err_handler_400(const HttpRequest &req);
 HttpResponse err_handler_404(const HttpRequest &req);
 HttpResponse err_handler_405(const HttpRequest &req);

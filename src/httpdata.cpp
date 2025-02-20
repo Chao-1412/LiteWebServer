@@ -411,6 +411,12 @@ void HttpResponse::set_body_bin(const std::string &data, HttpContentType type, c
     update_content_type(type, charset);
 }
 
+void HttpResponse::set_no_body()
+{
+    body_is_file_ = false;
+    header_oper(HeaderOper::DEL, "Content-Length", "");
+}
+
 void HttpResponse::dump_data()
 {
     std::cout << "====================================" << std::endl;
@@ -532,6 +538,16 @@ HttpResponse def_err_handler(HttpCode code, const HttpRequest &req)
     std::string err_body2 = std::string(http_enum_to_str<HttpCode>(code)) + ".</h1></body>\r\n</html>\r\n";
     rsp.set_body_bin(err_body1 + err_body2, HttpContentType::HTML_TYPE);
 
+    return rsp;
+}
+
+HttpResponse err_handler_301(const HttpRequest &req)
+{
+    HttpResponse rsp(req);
+    rsp.set_code(HttpCode::MOVED_PERMANENTLY);
+    rsp.header_oper(HttpResponse::HeaderOper::MODIFY,
+                    "Location", req.get_path() + "/");
+    rsp.set_no_body();
     return rsp;
 }
 
