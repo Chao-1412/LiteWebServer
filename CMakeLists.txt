@@ -21,6 +21,9 @@ set(SRC_FILE
 )
 
 add_executable(${TARGET} ${SRC_FILE})
+target_include_directories(${TARGET} PRIVATE
+    src/
+)
 # # google perftools
 # target_link_libraries(${TARGET} PRIVATE profiler tcmalloc)
 # 添加编译选项
