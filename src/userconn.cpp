@@ -87,15 +87,22 @@ void UserConn::process_out()
         if (file_fd_ >= 0) {
             struct stat file_stat;
             fstat(file_fd_, &file_stat);
-            file_size_ = file_stat.st_size;
-            rsp_.header_oper(HttpResponse::HeaderOper::MODIFY,
-                            "Content-Length", std::to_string(file_size_));
+            // 如果是路径的话，返回301错误
+            // 记得关闭文件描述符
+            if (file_stat.st_mode & S_IFDIR) {
+                close_file_fd();
+                rsp_ = err_handler_[HttpCode::MOVED_PERMANENTLY](req_);
+            } else {
+                file_size_ = file_stat.st_size;
+                rsp_.header_oper(HttpResponse::HeaderOper::MODIFY,
+                                "Content-Length", std::to_string(file_size_));
+            }
         } else {
             if (errno == ENOENT) {
                 rsp_ = err_handler_[HttpCode::NOT_FOUND](req_);
             } else {
-            rsp_ = err_handler_[HttpCode::INTERNAL_SERVER_ERROR](req_);
-            SPDLOG_ERROR("{} open failed, code: {}, msg: {}", file_path, errno, strerror(errno));
+                rsp_ = err_handler_[HttpCode::INTERNAL_SERVER_ERROR](req_);
+                SPDLOG_ERROR("{} open failed, code: {}, msg: {}", file_path, errno, strerror(errno));
             }
         }
     }
@@ -157,7 +164,9 @@ void UserConn::route_path()
                 rsp_ = err_handler_[HttpCode::NOT_ALLOWED](req_);
             }
         } else {
-            if (req_.get_path() == "/") {
+            // "/" "/foo/bar/" "/foo/"
+            // 都认为是根目录
+            if (req_.get_path().back() == '/') {
                 rsp_ = root_handler(req_);
             } else {
                 rsp_ = static_file_handler(req_);
