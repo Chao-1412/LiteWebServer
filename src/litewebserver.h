@@ -11,7 +11,6 @@
 #include "connloop.h"
 #include "serverconf.h"
 #include "ChaosThreadPool.h"
-#include "userconn.h"
 #include "cppver.h"
 
 
