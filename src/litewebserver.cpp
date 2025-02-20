@@ -14,9 +14,6 @@
 #include <unistd.h>
 #include <sys/eventfd.h>
 
-// turn on/off logging statements at compile time
-// change this if need other log level
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
 #include "spdlog/spdlog.h"
 #include "spdlog/async.h"
 // #include "spdlog/sinks/basic_file_sink.h"
@@ -143,11 +140,12 @@ void LiteWebServer::start_loop()
 
 void LiteWebServer::init_log()
 {
-    /**************************************************
+    /***********************************************************
      * !!! 为了提高日志效率，日志等级在编译时期被禁用
-     * 调用set_level修改日志等级的同时需要修改SPDLOG_ACTIVE_LEVEL宏
+     * 调用set_level修改日志等级的同时需要修改 tweakme.h 文件中的
+     * SPDLOG_ACTIVE_LEVEL宏：
      * #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_INFO
-     **************************************************/
+     ***********************************************************/
 
     // CONSOLE MULTI_THREAD
     // require:
