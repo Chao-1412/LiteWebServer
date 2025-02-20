@@ -19,7 +19,7 @@ set(SRC_FILE
 
 add_executable(${TARGET} ${SRC_FILE})
 target_include_directories(${TARGET} PRIVATE
-    "${PROJECT_BINARY_DIR}"
+    ${PROJECT_BINARY_DIR}
     src/
 )
 # # google perftools
