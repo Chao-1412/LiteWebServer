@@ -516,7 +516,7 @@ void HttpResponse::set_body(const std::string &data, bool is_file)
 HttpResponse root_handler(const HttpRequest &req)
 {
     HttpResponse rsp(req);
-    rsp.set_body_file("index.html", HttpContentType::HTML_TYPE);
+    rsp.set_body_file(req.get_path() + "index.html", HttpContentType::HTML_TYPE);
     return rsp;
 }
 
