@@ -9,7 +9,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-
 #include <unistd.h>
 
 #include "serverconf.h"
