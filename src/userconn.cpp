@@ -15,6 +15,7 @@
 #include "filepathutil.h"
 // #include "debughelper.h"
 
+//BUG 目前chunk size不能大于系统缓冲区大小，否则永远无法写入数据
 constexpr const int HTTP_FILE_CHUNK_SIZE = 64 * 1024;
 
 
@@ -205,7 +206,7 @@ void UserConn::send_body()
     ssize_t send_bytes = 0;
 
     if (rsp_.body_is_file()) {
-    while (true) {
+        while (true) {
             send_bytes = file_size_ - rsp_body_snd_bytes_;
             if (send_bytes <= 0) {
                 body_snd_ = true;
@@ -222,8 +223,8 @@ void UserConn::send_body()
                 //TODO 调整系统缓冲区大小是否能提升性能？
                 return;
             }
-            }
-        } else {
+        }
+    } else {
         while (true) {
             size_t remain_size = rsp_.get_body().size() - rsp_body_snd_bytes_;
             const char *snd_beg = rsp_.get_body().data() + rsp_body_snd_bytes_;
