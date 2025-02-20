@@ -20,6 +20,7 @@
 #include "spdlog/sinks/rotating_file_sink.h"
 
 #include "fdutil.h"
+#include <serverinfo.h>
 // #include "debughelper.h"
 
 
@@ -95,7 +96,7 @@ LiteWebServer::~LiteWebServer()
 
 void LiteWebServer::start_loop()
 {
-    SPDLOG_INFO("START server main loop...");
+    SPDLOG_INFO("START {} looping...", LITEWEBSERVER_NAME_VER);
 
     running_ = true;
     int n_event = 0;
@@ -135,7 +136,7 @@ void LiteWebServer::start_loop()
         conn_loops_[i]->stop();
     }
 
-    SPDLOG_INFO("END server main loop...");
+    SPDLOG_INFO("END {} looping...", LITEWEBSERVER_NAME_VER);
 }
 
 void LiteWebServer::init_log()
