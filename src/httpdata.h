@@ -64,6 +64,7 @@ enum class HttpVersion
 };
 
 // new HttpContentType enum insert here
+//!!! Also need to update get_file_content_type function
 #define HTTPCONTENTTYPE_ENUM \
     X(UNKNOWN, 0x00, "")   \
     X(HTML_TYPE, 0x01, "text/html")   \
@@ -74,6 +75,7 @@ enum class HttpVersion
     X(SVGXML_TYPE, 0x20, "image/svg+xml")   \
     X(JPEG_TYPE, 0x40, "image/jpeg")   \
     X(PNG_TYPE, 0x80, "image/png")   \
+    X(GIF_TYPE, 0x100, "image/gif")   \
     
 
 enum class HttpContentType
@@ -175,6 +177,7 @@ inline HttpContentType get_file_content_type(const std::string &path)
     if (extension == ".svg") { return HttpContentType::SVGXML_TYPE; }
     if (extension == ".jpeg") { return HttpContentType::JPEG_TYPE; }
     if (extension == ".png") { return HttpContentType::PNG_TYPE; }
+    if (extension == ".gif") { return HttpContentType::GIF_TYPE; }
 
     return HttpContentType::UNKNOWN;    
 }
