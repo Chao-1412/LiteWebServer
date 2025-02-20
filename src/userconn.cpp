@@ -20,6 +20,7 @@ constexpr const int HTTP_FILE_CHUNK_SIZE = 64 * 1024;
 
 
 std::map<HttpCode, UserConn::HandleFunc> UserConn::err_handler_ = {
+    {HttpCode::MOVED_PERMANENTLY, err_handler_301},
     {HttpCode::BAD_REQUEST, err_handler_400},
     {HttpCode::NOT_FOUND, err_handler_404},
     {HttpCode::NOT_ALLOWED, err_handler_405},
