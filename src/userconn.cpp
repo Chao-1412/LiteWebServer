@@ -91,8 +91,12 @@ void UserConn::process_out()
             rsp_.header_oper(HttpResponse::HeaderOper::MODIFY,
                             "Content-Length", std::to_string(file_size_));
         } else {
+            if (errno == ENOENT) {
+                rsp_ = err_handler_[HttpCode::NOT_FOUND](req_);
+            } else {
             rsp_ = err_handler_[HttpCode::INTERNAL_SERVER_ERROR](req_);
             SPDLOG_ERROR("{} open failed, code: {}, msg: {}", file_path, errno, strerror(errno));
+            }
         }
     }
 
