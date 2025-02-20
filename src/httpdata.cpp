@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <serverinfo.h>
 #include "stringutil.h"
 
 
@@ -345,7 +346,8 @@ HttpResponse::HttpResponse(const HttpRequest &req)
     : http_ver_(req.get_http_ver())
     , code_(HttpCode::OK)
     , headers_({{"Content-Type", "text/html; charset=UTF-8"},
-                {"Connection", "close"}}, 10)   // 预分配大小，降低哈希开销，空间换时间
+                {"Connection", "close"}, {"Server:", LITEWEBSERVER_NAME_VER}},
+               10) // 预分配大小，降低哈希开销，空间换时间
     , maked_base_rsp_(false)
     , base_rsp_("")
     , body_("")
