@@ -5,6 +5,8 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <chrono>
+#include <iostream>
 
 #include <stdint.h> 
 #include <sys/epoll.h>
@@ -75,5 +77,44 @@ inline static std::string buffer_data_to_str(std::string buffer, size_t data_byt
 {
     return {buffer, 0, data_bytes};
 }
+
+/**
+ * @brief 简易计时器
+ *        使用方法：
+ *        {
+ *            TimeCount tc("desc", times);
+ *            ...
+ *        }
+ *        花括号中创建计时器，同时执行需要计时的代码
+ *        离开花括号时，自动打印执行时间
+ */
+class TimeCount
+{
+public:
+    TimeCount(const std::string& desc, long long unsigned times)
+        : desc_(desc)
+        , times_(times)
+        , start_(std::chrono::high_resolution_clock::now()){}
+
+    ~TimeCount()
+    {
+        end_ = std::chrono::high_resolution_clock::now();
+        std::cout << desc_ << " " << times_ << " times cost: "
+                  << std::chrono::duration_cast<std::chrono::seconds>(end_ - start_).count()
+                  << "s" << " | "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(end_ - start_).count()
+                  << "ms" << " | "
+                  << std::chrono::duration_cast<std::chrono::microseconds>(end_ - start_).count()
+                  << "mis" << " | "
+                  << std::chrono::duration_cast<std::chrono::nanoseconds>(end_ - start_).count()
+                  << "ns" << std::endl;
+    }
+
+private:
+    std::string desc_;
+    long long unsigned times_;
+    std::chrono::high_resolution_clock::time_point start_;
+    std::chrono::high_resolution_clock::time_point end_;
+};
 
 #endif // SRC_DEBUG_HELPER_UTIL_H_
