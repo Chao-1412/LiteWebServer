@@ -43,21 +43,36 @@ HttpResponse favicon_ico(const HttpRequest &req)
 
 int main()
 {
-    UserConn::register_router("/", HttpMethod::GET, index_page);
-    UserConn::register_router("/favicon.ico", HttpMethod::GET, favicon_ico);
-    UserConn::register_router("/json", HttpMethod::GET,
-        [](const HttpRequest &req) -> HttpResponse {
-            HttpResponse rsp(req);
-            std::string json_data = "{\"name\": \"John\", \"age\": 30}";
-            rsp.set_body_bin(json_data, HttpContentType::JSON_TYPE);
-            return rsp;
-        }
-    );
-    UserConn::register_router("/hello", HttpMethod::GET, hello_page);
+    /**
+     * @brief 测试header_oper的接口性能
+     */
+    HttpRequest req;
+    HttpResponse rsp(req);
+    long long unsigned int times = 10000000;
+    // 如果不是要临时分配的话，引用的性能就很不错，没必要特意处理成移动版本
+    std::string key = "Content-Type";
+    std::string value = "text/html";
 
-    ServerConf conf(8080, "../testsite");
-    LiteWebServer server(conf);
-    server.start_loop();
+    {
+        TimeCount tc("add header lref", times);
+        for (long long unsigned i = 0; i < times; ++i) {
+            // 临时分配的话性能就会差点，不如直接原地构造右值
+            // std::string key = "Content-Type";
+            // std::string value = "text/html";
+            rsp.header_oper(HttpResponse::HeaderOper::ADD,
+                            key, value);
+        }
+    }
+
+    {
+        TimeCount tc("add header rref", times);
+        for (long long unsigned i = 0; i < times; ++i) {
+            rsp.header_oper(HttpResponse::HeaderOper::ADD,
+                            "Content-Type", "text/html");
+        }
+    }
+
+    // UserConn::register_router("/", HttpMethod::GET, index_page);
 
     return 0;
  }
