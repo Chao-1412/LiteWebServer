@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 
+#include <serverinfo.h>
 #include "stringutil.h"
 #include "filepathutil.h"
 
@@ -328,6 +329,7 @@ public:
         headers_.clear();
         headers_.emplace("Content-Type", "text/html; charset=UTF-8");
         headers_.emplace("Connection", "close");
+        headers_.emplace("Server", LITEWEBSERVER_NAME_VER);
         maked_base_rsp_ = false;
         base_rsp_.clear();
         body_.clear();

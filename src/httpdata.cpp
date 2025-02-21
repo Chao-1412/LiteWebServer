@@ -7,9 +7,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include <serverinfo.h>
-#include "stringutil.h"
-
 
 HttpRequest::HttpRequest()
     : state_(ParseState::PARSE_REQ_LINE)
