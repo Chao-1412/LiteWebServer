@@ -26,6 +26,7 @@ set(TEST_SRC_FILE
     test_httpdata.cpp
     test_timer.cpp
     test_filepathutil.cpp
+    test_stringutil.cpp
 )
 
 # add the test executable

@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <algorithm>
+#include <cctype>
 
 #include <errno.h>
 
@@ -66,6 +68,9 @@ public:
      */
     template<typename T, typename F>
     static bool str_to_inum(T &ret, const std::string &str, F fn);
+
+    inline static
+    void str_to_lower(std::string &str);
 };
 
 std::vector<std::string> StringUtil::str_split(
@@ -153,4 +158,11 @@ bool StringUtil::str_to_inum(T &ret, const std::string &str, F fn)
 
     return true;
 }
+
+void StringUtil::str_to_lower(std::string &str)
+{
+    std::transform(str.begin(), str.end(),
+                   str.begin(), ::tolower);
+}
+
 #endif //SRC_STRING_UTIL_H_
