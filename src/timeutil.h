@@ -16,8 +16,7 @@
 using SteadyClock = std::chrono::steady_clock;
 using SystemClock = std::chrono::system_clock;
 using MilliSeconds = std::chrono::milliseconds;
-constexpr const int DEF_CHK_MIN_TIME_MS = 10 * 1000;
-constexpr const int DEF_TIMER_EXPIRE_MS = DEF_CHK_MIN_TIME_MS;
+constexpr const int DEF_TIMER_EXPIRE_MS = 10 * 1000;
 
 /**
  * @brief 获取当前时间的字符串
