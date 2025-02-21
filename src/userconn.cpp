@@ -111,13 +111,19 @@ void UserConn::process_out()
         connloop_->mod_conn_event_write(cli_sock_);
     } else {
         std::string conn_state;
-        req_.get_header("Connection", conn_state);
-        if (conn_state == "close") {
-            connloop_->conn_close(cli_sock_);
+        if (req_.get_header("Connection", conn_state))
+        {
+            StringUtil::str_to_lower(conn_state);
+            if (conn_state == "keep-alive") {
+                // 如果不是直接断开链接，则重置连接状态
+                conn_state_reset();
+                connloop_->mod_conn_event_read(cli_sock_);
+            } else {
+                connloop_->conn_close(cli_sock_);
+            }
         } else {
-            // 如果不是直接断开链接，则重置连接状态
-            conn_state_reset();
-            connloop_->mod_conn_event_read(cli_sock_);
+            // 如果没有Connection字段，则默认断开链接
+            connloop_->conn_close(cli_sock_);
         }
     }
 }
