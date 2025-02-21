@@ -235,7 +235,7 @@ void LiteWebServer::create_listen_service()
     host_addr.sin_port = htons(srv_conf_.port_);
     sock_ret = bind(srv_sock_, (struct sockaddr*)&host_addr, host_addr_size);
 
-    sock_ret = listen(srv_sock_, srv_conf_.listen_queue_n_);
+    sock_ret = listen(srv_sock_, srv_conf_.backlog_);
     if (sock_ret == -1) {
         throw std::runtime_error(strerror(errno));
     }
