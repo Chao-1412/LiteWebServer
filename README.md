@@ -60,6 +60,42 @@ make
 
    ![ETLT](README.assets/ET+LT.png)
 
+2. Apache Bench测试
+
+   4线程，1000客户端，一千万次请求，很少的文件日志，短连接，单页73526 bytes：
+
+   ```bash
+   ab -n 10000000 -c 1000 http://127.0.0.1:8080/
+   ```
+
+   LT+LT模式，约35595 QPS，ET(accept连接)+LT模式，约 34197 QPS，感觉ab测试没有上强度，CPU的使用率都很低，跑出来的结果也不太理想，应该是测试参数没选好的问题，不过可以发现ET+LT模式的QPS差不多，所以只要设计好LT和ET应该差的不是很大
+
+   LT+LT：
+  
+   ![LTLTab](README.assets/LT+LT_ab.png)
+
+   ET+LT：
+
+   ![ETLTab](README.assets/ET+LT_ab.png)
+
+2. wrk测试
+
+   12线程，1000客户端，很少的文件日志，短连接，测试60s，单页73526 bytes：
+
+   ```bash
+    wrk -t12 -c1000 -d60s http://127.0.0.1:8080/index.html
+   ```
+
+   LT+LT模式，约84846 QPS，ET(accept连接)+LT模式，约 87972 QPS，wrk看起来是压力最大的，多个线程的CPU使用率都在90%左右，所以QPS也是最高的，测试也再次印证设计好的LT和ET应该差的不是很大，不过这都是建立在只有accept连接为ET模式的基础上，后续实现全ET模式还会再测下
+
+   LT+LT：
+  
+   ![LTLTwrk](README.assets/LT+LT_wrk.png)
+
+   ET+LT：
+
+   ![ETLTwrk](README.assets/ET+LT_wrk.png)    
+
 ### 感谢
 
 TinyWebServer：https://github.com/qinguoyi/TinyWebServer
