@@ -34,7 +34,7 @@ make
 
 服务程序，测试程序在同一台虚拟机
 
-1. WebBench测试
+**1. WebBench测试**
    
    4线程，10000客户端，禁用所有日志，短连接，测试60秒，简单页面测试：
 
@@ -60,7 +60,7 @@ make
 
    ![ETLT](README.assets/ET+LT.png)
 
-2. Apache Bench测试
+**2. Apache Bench测试**
 
    4线程，1000客户端，一千万次请求，很少的文件日志，短连接，单页73526 bytes：
 
@@ -78,7 +78,7 @@ make
 
    ![ETLTab](README.assets/ET+LT_ab.png)
 
-2. wrk测试
+**2. wrk测试**
 
    12线程，1000客户端，很少的文件日志，短连接，测试60s，单页73526 bytes：
 
