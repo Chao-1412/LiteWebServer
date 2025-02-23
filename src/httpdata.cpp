@@ -80,7 +80,7 @@ bool HttpRequest::get_param(const std::string &key, std::string &val) const
     return true;
 }
 
-void HttpRequest::dump_data()
+void HttpRequest::dump_data() const
 {
     std::cout << "====================================" << std::endl;
     std::cout << "Current http req data:" << std::endl;
@@ -106,7 +106,7 @@ void HttpRequest::dump_data()
     }
 }
 
-std::string HttpRequest::dump_data_str()
+std::string HttpRequest::dump_data_str() const
 {
     std::string data;
     data += "====================================\n";

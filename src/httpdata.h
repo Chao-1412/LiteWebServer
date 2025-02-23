@@ -258,8 +258,8 @@ public:
         body_.clear();
     }
     const std::string& get_body() const { return body_; }
-    void dump_data();
-    std::string dump_data_str();
+    void dump_data() const;
+    std::string dump_data_str() const;
 
 private:
     void set_bad_req() { is_bad_req_ = true; state_ = ParseState::PARSE_SUCCESS; }
