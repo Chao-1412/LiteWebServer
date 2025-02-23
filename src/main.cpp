@@ -42,6 +42,29 @@
 //     return rsp;
 // }
 
+// HttpResponse get_content(const HttpRequest &req)
+// {
+
+//     HttpResponse rsp(req);
+//     std::string file_name;
+
+//     if (!req.get_param("name", file_name)) {
+//         rsp.set_code(HttpCode::NOT_FOUND);
+//     } else {
+//         HttpContentType type;
+//         if (file_name == "hello.html") {
+//             type = HttpContentType::HTML_TYPE;
+//         } else if (file_name == "favicon.ico") {
+//             type = HttpContentType::XICON_TYPE;
+//         } else {
+//             rsp.set_code(HttpCode::NOT_FOUND);
+//         }
+//         rsp.set_body_file(file_name, type);
+//     }
+
+//     return rsp;
+// }
+
 
 int main()
 {
@@ -85,6 +108,7 @@ int main()
     //         return rsp;
     //     }
     // );
+    // UserConn::register_router("/get/content", HttpMethod::GET, get_content);
     
     ServerConf conf(8080, "../testsite");
     LiteWebServer server(conf);
