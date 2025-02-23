@@ -16,13 +16,17 @@
 #include "debughelper.h"
 
 
-// static const std::string index_body = "<!DOCTYPE html>\r\n"
-//                                       "<html>\r\n"
-//                                       "<head><title>Simple Web Server</title></head>\r\n"
-//                                       "<body><h1>Hello, World! This is a simple web server.</h1></body>\r\n"
-//                                       "</html>\r\n";
+
 // HttpResponse index_page(const HttpRequest &req)
 // {
+//     static const 
+//     std::string index_body =
+//         "<!DOCTYPE html>\r\n"
+//         "<html>\r\n"
+//         "<head><title>Simple Web Server</title></head>\r\n"
+//         "<body><h1>Hello, World! This is a simple web server.</h1></body>\r\n"
+//         "</html>\r\n";
+
 //     HttpResponse rsp(req);
 //     rsp.set_body_bin(index_body, HttpContentType::HTML_TYPE);
 //     return rsp;
