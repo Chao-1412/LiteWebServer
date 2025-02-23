@@ -93,7 +93,6 @@ void HttpRequest::dump_data() const
               << std::endl;
     std::cout << "path: " << path_ << std::endl;
     std::cout << "http_ver: " << http_ver_ << std::endl;
-    std::cout << "body: " << body_ << std::endl;
     
     std::cout << "header:" << std::endl;
     for (const auto &kv : headers_) {
@@ -104,6 +103,8 @@ void HttpRequest::dump_data() const
     for (const auto &kv : param_) {
         std::cout << "    " << kv.first << ": " << kv.second << std::endl;
     }
+
+    std::cout << "body: " << body_ << std::endl;
 }
 
 std::string HttpRequest::dump_data_str() const
@@ -119,7 +120,6 @@ std::string HttpRequest::dump_data_str() const
             + http_enum_to_str<HttpMethod>(method_) + "\n";
     data += "path: " + path_ + "\n";
     data += "http_ver: " + http_ver_ + "\n";
-    data += "body: " + body_ + "\n";
 
     data += "header:\n";
     for (const auto &kv : headers_) {
@@ -130,6 +130,8 @@ std::string HttpRequest::dump_data_str() const
     for (const auto &kv : param_) {
         data += "    " + kv.first + ": " + kv.second + "\n";
     }
+
+    data += "body: " + body_ + "\n";
 
     return data;
 }
