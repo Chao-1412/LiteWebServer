@@ -2,6 +2,7 @@
 #include <cstring>
 #include <map>
 #include <iostream>
+#include <sstream>
 
 #include <errno.h>
 #include <unistd.h>
@@ -14,7 +15,6 @@
 #include "userconn.h"
 #include "httpdata.h"
 #include "debughelper.h"
-
 
 
 // HttpResponse index_page(const HttpRequest &req)
@@ -69,6 +69,33 @@
 //     return rsp;
 // }
 
+// HttpResponse post_content(const HttpRequest &req)
+// {
+//     std::ostringstream oss;
+//     oss << "<!DOCTYPE html>\r\n"
+//         << "<html>\r\n"
+//         << "<head><title>Lite Web Server</title></head>\r\n"
+//         << "<body><h1>";
+
+//     HttpResponse rsp(req);
+    
+//     std::string val;
+//     req.get_header("Content-Type", val);
+//     if (val == "application/json") {
+//         oss << "application/json data: ";
+//     } else if (val == "application/x-www-form-urlencoded") {
+//         oss << "application/x-www-form-urlencoded data: ";
+//     }
+
+//     oss << req.get_body()
+//         << "</h1></body>\r\n"
+//         << "</html>\r\n";
+    
+//     rsp.set_body_bin(oss.str(), HttpContentType::HTML_TYPE);
+
+//     return rsp;
+// }
+
 
 int main()
 {
@@ -113,6 +140,7 @@ int main()
     //     }
     // );
     // UserConn::register_router("/get/content", HttpMethod::GET, get_content);
+    // UserConn::register_router("/post/content", HttpMethod::POST, post_content);
     
     ServerConf conf(8080, "../testsite");
     LiteWebServer server(conf);
