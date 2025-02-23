@@ -68,22 +68,22 @@ enum class HttpVersion
 // new HttpContentType enum insert here
 //!!! ALSO NEED TO UPDATE get_file_content_type FUNCTION
 #define HTTPCONTENTTYPE_ENUM \
-    X(UNKNOWN, 0x00, "")   \
-    X(HTML_TYPE, 0x01, "text/html")   \
-    X(JSON_TYPE, 0x02, "application/json")   \
-    X(XICON_TYPE, 0x04, "image/x-icon")   \
-    X(CSS_TYPE, 0x08, "text/css")   \
-    X(JS_TYPE, 0x10, "text/javascript")   \
-    X(SVGXML_TYPE, 0x20, "image/svg+xml")   \
-    X(JPEG_TYPE, 0x40, "image/jpeg")   \
-    X(PNG_TYPE, 0x80, "image/png")   \
-    X(GIF_TYPE, 0x100, "image/gif")   \
-    X(XWWWFORM_URLENCODED_TYPE, 0x200, "application/x-www-form-urlencoded")   \
+    X(UNKNOWN, "")   \
+    X(HTML_TYPE, "text/html")   \
+    X(JSON_TYPE, "application/json")   \
+    X(XICON_TYPE, "image/x-icon")   \
+    X(CSS_TYPE, "text/css")   \
+    X(JS_TYPE, "text/javascript")   \
+    X(SVGXML_TYPE, "image/svg+xml")   \
+    X(JPEG_TYPE, "image/jpeg")   \
+    X(PNG_TYPE, "image/png")   \
+    X(GIF_TYPE, "image/gif")   \
+    X(XWWWFORM_URLENCODED_TYPE, "application/x-www-form-urlencoded")   \
     
 
 enum class HttpContentType
 {
-    #define X(NAME, CODE, DESC) NAME = CODE,
+    #define X(NAME, DESC) NAME,
     HTTPCONTENTTYPE_ENUM
     #undef X
 };
@@ -152,7 +152,7 @@ template<>
 LWS_CONSTEXPR const char* http_enum_to_str<HttpContentType>(HttpContentType e)
 {
     switch (e) {
-        #define X(NAME, CODE, DESC) case HttpContentType::NAME: return DESC;
+        #define X(NAME, DESC) case HttpContentType::NAME: return DESC;
         HTTPCONTENTTYPE_ENUM
         #undef X
         default: return "";
@@ -162,7 +162,7 @@ LWS_CONSTEXPR const char* http_enum_to_str<HttpContentType>(HttpContentType e)
 template<>
 LWS_CONSTEXPR HttpContentType http_str_to_enum<HttpContentType>(const char* str)
 {
-    #define X(NAME, CODE, DESC) if (StringUtil::ch_str_is_equal(str, DESC)) return HttpContentType::NAME;
+    #define X(NAME, DESC) if (StringUtil::ch_str_is_equal(str, DESC)) return HttpContentType::NAME;
     HTTPCONTENTTYPE_ENUM
     #undef X
     return HttpContentType::UNKNOWN;
