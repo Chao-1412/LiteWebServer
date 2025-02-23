@@ -66,7 +66,7 @@ enum class HttpVersion
 };
 
 // new HttpContentType enum insert here
-//!!! Also need to update get_file_content_type function
+//!!! ALSO NEED TO UPDATE get_file_content_type FUNCTION
 #define HTTPCONTENTTYPE_ENUM \
     X(UNKNOWN, 0x00, "")   \
     X(HTML_TYPE, 0x01, "text/html")   \
@@ -78,6 +78,7 @@ enum class HttpVersion
     X(JPEG_TYPE, 0x40, "image/jpeg")   \
     X(PNG_TYPE, 0x80, "image/png")   \
     X(GIF_TYPE, 0x100, "image/gif")   \
+    X(XWWWFORM_URLENCODED_TYPE, 0x200, "application/x-www-form-urlencoded")   \
     
 
 enum class HttpContentType
