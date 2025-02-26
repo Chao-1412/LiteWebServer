@@ -1,5 +1,5 @@
-#ifndef SRC_LITEWEBSERVER_H_
-#define SRC_LITEWEBSERVER_H_
+#ifndef LITEWEBSERVER_SRC_LITEWEBSERVER_H_
+#define LITEWEBSERVER_SRC_LITEWEBSERVER_H_
 
 #include <string>
 #include <unordered_map>
@@ -65,4 +65,4 @@ private:
     uint8_t pool_idx_;
 };
 
-#endif //SRC_LITEWEBSERVER_H_
+#endif //LITEWEBSERVER_SRC_LITEWEBSERVER_H_

@@ -1,5 +1,5 @@
-#ifndef SRC_USER_CONN_H_
-#define SRC_USER_CONN_H_
+#ifndef LITEWEBSERVER_SRC_USER_CONN_H_
+#define LITEWEBSERVER_SRC_USER_CONN_H_
 
 #include <string>
 #include <functional>
@@ -104,4 +104,4 @@ private:
     off_t file_size_;
 };
 
-#endif  // SRC_USER_CONN_H_
+#endif  // LITEWEBSERVER_SRC_USER_CONN_H_

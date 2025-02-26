@@ -1,5 +1,5 @@
-#ifndef CHAOS_THREAD_POOL_H_
-#define CHAOS_THREAD_POOL_H_
+#ifndef LITEWEBSERVER_CHAOS_THREAD_POOL_H_
+#define LITEWEBSERVER_CHAOS_THREAD_POOL_H_
 #include <queue>
 #include <functional>
 #include <list>
@@ -320,4 +320,4 @@ inline void ThreadPool::handle_queue_idle()
 }
 
 } // namespace chaos
-#endif // CHAOS_THREAD_POOL_H_
+#endif // LITEWEBSERVER_CHAOS_THREAD_POOL_H_

@@ -1,4 +1,4 @@
-#ifndef SRC_CONNLOOP_H_
+#ifndef LITEWEBSERVER_SRC_CONNLOOP_H_
 #include <vector>
 #include <memory>
 #include <mutex>
@@ -74,5 +74,5 @@ private:
     char cmd_r_buf_[DEF_CMD_BUFF_LEN];
 };
 
-#define SRC_CONNLOOP_H_
-#endif  // SRC_CONNLOOP_H_
+#define LITEWEBSERVER_SRC_CONNLOOP_H_
+#endif  // LITEWEBSERVER_SRC_CONNLOOP_H_

@@ -1,5 +1,5 @@
-#ifndef SRC_FILEPATHUTIL_H_
-#define SRC_FILEPATHUTIL_H_
+#ifndef LITEWEBSERVER_SRC_FILEPATHUTIL_H_
+#define LITEWEBSERVER_SRC_FILEPATHUTIL_H_
 
 #include <string>
 
@@ -58,4 +58,4 @@ inline std::string combine_two_path(const std::string &first, const std::string 
     }
 }
 
-#endif //SRC_FILEPATHUTIL_H_
+#endif //LITEWEBSERVER_SRC_FILEPATHUTIL_H_

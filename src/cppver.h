@@ -1,5 +1,5 @@
-#ifndef SRC_CPPVER_H_
-#define SRC_CPPVER_H_
+#ifndef LITEWEBSERVER_SRC_CPPVER_H_
+#define LITEWEBSERVER_SRC_CPPVER_H_
 
 // C++98/03	199711L
 // C++11	201103L
@@ -76,4 +76,4 @@
 #  endif
 #endif
 
-#endif // SRC_CPPVER_H_
+#endif // LITEWEBSERVER_SRC_CPPVER_H_

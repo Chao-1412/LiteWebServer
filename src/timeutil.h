@@ -1,5 +1,5 @@
-#ifndef SRC_EPOLLTIMER_H_
-#define SRC_EPOLLTIMER_H_
+#ifndef LITEWEBSERVER_SRC_EPOLLTIMER_H_
+#define LITEWEBSERVER_SRC_EPOLLTIMER_H_
 
 #include <chrono>
 #include <queue>
@@ -174,4 +174,4 @@ private:
     std::unordered_map<int, SteadyClock::time_point> timer_map_;
 };
 
-#endif //SRC_EPOLLTIMER_H_
+#endif //LITEWEBSERVER_SRC_EPOLLTIMER_H_

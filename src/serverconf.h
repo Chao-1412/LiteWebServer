@@ -1,5 +1,5 @@
-#ifndef SRC_SERVER_CONF_H_
-#define SRC_SERVER_CONF_H_
+#ifndef LITEWEBSERVER_SRC_SERVER_CONF_H_
+#define LITEWEBSERVER_SRC_SERVER_CONF_H_
 
 #include <string>
 
@@ -43,4 +43,4 @@ public:
     uint16_t epoll_max_events_;
 };
 
-#endif //SRC_SERVER_CONF_H_
+#endif //LITEWEBSERVER_SRC_SERVER_CONF_H_

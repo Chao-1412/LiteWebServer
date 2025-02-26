@@ -1,5 +1,5 @@
-#ifndef SRC_FD_UTIL_
-#define SRC_FD_UTIL_
+#ifndef LITEWEBSERVER_SRC_FD_UTIL_
+#define LITEWEBSERVER_SRC_FD_UTIL_
 
 #include <stdint.h>
 
@@ -91,4 +91,4 @@ inline int FdUtil::set_socket_reuseaddr(int fd)
     return setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
 }
 
-#endif // SRC_FD_UTIL_
+#endif // LITEWEBSERVER_SRC_FD_UTIL_

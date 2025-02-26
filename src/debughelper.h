@@ -1,5 +1,5 @@
-#ifndef SRC_DEBUG_HELPER_UTIL_H_
-#define SRC_DEBUG_HELPER_UTIL_H_
+#ifndef LITEWEBSERVER_SRC_DEBUG_HELPER_UTIL_H_
+#define LITEWEBSERVER_SRC_DEBUG_HELPER_UTIL_H_
 
 #include <vector>
 #include <string>
@@ -117,4 +117,4 @@ private:
     std::chrono::high_resolution_clock::time_point end_;
 };
 
-#endif // SRC_DEBUG_HELPER_UTIL_H_
+#endif // LITEWEBSERVER_SRC_DEBUG_HELPER_UTIL_H_

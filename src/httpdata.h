@@ -1,5 +1,5 @@
-#ifndef SRC_HTTPDATA_H_
-#define SRC_HTTPDATA_H_
+#ifndef LITEWEBSERVER_SRC_HTTPDATA_H_
+#define LITEWEBSERVER_SRC_HTTPDATA_H_
 
 #include <unordered_map>
 #include <string>
@@ -366,4 +366,4 @@ HttpResponse err_handler_404(const HttpRequest &req);
 HttpResponse err_handler_405(const HttpRequest &req);
 HttpResponse err_handler_500(const HttpRequest &req);
 
-#endif //SRC_HTTPDATA_H_
+#endif //LITEWEBSERVER_SRC_HTTPDATA_H_

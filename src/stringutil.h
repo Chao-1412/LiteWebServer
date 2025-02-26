@@ -1,5 +1,5 @@
-#ifndef SRC_STRING_UTIL_H_
-#define SRC_STRING_UTIL_H_
+#ifndef LITEWEBSERVER_SRC_STRING_UTIL_H_
+#define LITEWEBSERVER_SRC_STRING_UTIL_H_
 
 #include <vector>
 #include <string>
@@ -165,4 +165,4 @@ void StringUtil::str_to_lower(std::string &str)
                    str.begin(), ::tolower);
 }
 
-#endif //SRC_STRING_UTIL_H_
+#endif //LITEWEBSERVER_SRC_STRING_UTIL_H_
